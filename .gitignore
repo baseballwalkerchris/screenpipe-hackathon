@@ -44,6 +44,8 @@ node_modules/
 
 cn 
 
+.next/
+
 
 # Python stuff
 venv/
