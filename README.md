@@ -1,36 +1,17 @@
-# screenpipe playground
 
-a flexible playground for displaying, testing, and exploring components with their associated code, documentation, and ai prompts.
 
-<!-- <img width="1312" alt="screenshot of component playground" src="https://github.com/user-attachments/assets/3e5abd07-0a3c-4c3b-8351-5107beb4fb10"> -->
+scroll back in time, select a time range, cmd+k and ask AI anything about your screen activity or audio conversations
 
-## features
 
-- **interactive component display**: view rendered components in action
-- **code inspection**: examine the full source code of each component
-- **raw output**: see the raw api responses and data
-- **ai prompt visibility**: view the prompts and context used to generate components
-- **collapsible interface**: toggle component visibility for a cleaner workspace
+https://github.com/user-attachments/assets/77e7ba2c-be41-491a-9d88-36aed6213050
 
-## usage
 
-the playground allows you to:
+<img width="1312" alt="Screenshot 2025-02-07 at 9 43 23 AM" src="https://github.com/user-attachments/assets/01885214-9f0c-49d5-aa65-59cd6db3cc2f" />
 
-1. view rendered components in their intended state
-2. inspect the raw output from api calls
-3. study the complete component code
-4. examine the ai prompts and context used to generate components
+<img width="1312" alt="Screenshot 2025-02-24 at 7 13 36 PM" src="https://github.com/user-attachments/assets/cfd30cd3-21f5-4044-91db-44292d52ce84" />
 
-## component structure
 
-each playground card includes:
-- component title and collapsible interface
-- tabs for different views (rendered output, raw output, code, ai prompt)
-- copy functionality for sharing prompts and context
+<img width="1312" alt="Screenshot 2024-12-16 at 12 33 16 PM" src="https://github.com/user-attachments/assets/071941ba-3b54-4d63-a6a5-66e2e5358814" />
 
-## getting started
-
-1. install this pipe from UI and play with it
-2. follow docs to create your pipe (it will create this app) (https://docs.screenpi.pe/docs/plugins)
-3. modify code from ready-to-use-examples directory
+<img width="1312" alt="Screenshot 2024-12-16 at 2 03 25 PM" src="https://github.com/user-attachments/assets/48a8deec-c014-4a35-927a-b74b32c3d5cd" />
 
