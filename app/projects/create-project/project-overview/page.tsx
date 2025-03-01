@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,6 +23,7 @@ const stages = [
 ];
 
 export default function Page() {
+  const router = useRouter();
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [hasCompensation, setHasCompensation] = useState<"yes" | "no">("no");
@@ -33,6 +35,7 @@ export default function Page() {
       projectDescription,
       hasCompensation,
     });
+    router.push("/projects/create-project/prototype");
     // Here you would typically save the project data
   };
 
@@ -82,7 +85,7 @@ export default function Page() {
                 id="projectName"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                placeholder="Project #1"
+                placeholder="My Project"
                 className="mt-1"
               />
             </div>
