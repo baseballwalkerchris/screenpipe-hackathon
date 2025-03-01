@@ -90,7 +90,7 @@ export default function Page() {
                   id="projectName"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="My Project"
+                  placeholder="Project #1"
                   className="mt-1"
                 />
               </div>
