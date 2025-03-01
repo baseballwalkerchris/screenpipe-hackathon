@@ -47,30 +47,35 @@ export function useTranscriptionStream(
 
       // Create a separate async function to handle the stream
       const handleVisionStream = async () => {
+        console.log('Starting vision stream...')
         const visionStream = pipe.streamVision(true)
+        console.log('Vision stream created:', !!visionStream)
 
         for await (const chunk of visionStream) {
           if (signal.aborted) {
             console.log('stream aborted, breaking loop')
             break
-
           }
           
-          console.log('new vision chunk:', {
-            text: chunk.data.text,
-          })
+          const appName = chunk.data.app_name?.toLowerCase() || ""
+          const text = chunk.data.text?.toLowerCase() || ""
+          const image = chunk.data.image?.toLowerCase() || ""
   
           const newVisionChunk: VisionChunk = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
-            text: chunk.data.text,
+            text: text,
+            appName: appName,
+            image: image
           }
+          console.log('Created vision chunk:', newVisionChunk)
           onNewVisionChunk(newVisionChunk)
         }
       }
 
       const handleStream = async () => {
         const stream = pipe.streamTranscriptions()
+        console.log('Stream created:', !!stream)
 
         try {
           for await (const chunk of stream) {

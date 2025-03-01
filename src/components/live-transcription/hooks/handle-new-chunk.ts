@@ -80,34 +80,59 @@ export function createHandleNewChunk(deps: HandleNewChunkDeps) {
 
     async function tryProcessVisionData() {
         const now = Date.now();
-        
+        const totalVisionText = visionBuffer.map(chunk => chunk.text).join(' ');
+
+        let shouldProcess = false;
+        let existingVisionChunks: VisionChunk[] = [];
+        let existingMergedVisionChunks: VisionChunk[] = [];
+
         setData(currentData => {
-            if (!currentData) return null;
+            if (!currentData) {
+                console.log('No current data available for vision processing')
+                return null;
+            }
+            shouldProcess = true;
+            existingVisionChunks = currentData.visionChunks ?? [];
+            existingMergedVisionChunks = currentData.mergedVisionChunks ?? [];
+            return currentData;
+        });
 
-            const visionChunks = [...currentData.visionChunks, ...visionBuffer];
+        if (!shouldProcess || visionBuffer.length === 0) {
+            console.log('Skipping vision processing:', { shouldProcess, bufferLength: visionBuffer.length })
+            return;
+        }
 
-            const mergedVisionChunks = visionChunks.reduce<VisionChunk[]>((acc, curr) => {
+        try {
+
+            const allVisionChunks = [...existingVisionChunks, ...visionBuffer];
+            const mergedVisionChunks = allVisionChunks.reduce<VisionChunk[]>((acc, curr) => {
                 const prev = acc[acc.length - 1];
 
                 if (prev && prev.text === curr.text) {
-                    return acc; // Avoid duplicates
+                    return acc;
                 }
 
                 acc.push({ ...curr });
                 return acc;
             }, []);
 
-            const newData = {
-                ...currentData,
-                visionChunks,
-                mergedVisionChunks
-            };
 
-            void updateStore(newData);
-            return newData;
-        });
+            setData(current => {
+                if (!current) return null;
 
-        visionBuffer.length = 0; // Clear vision buffer
+                const newData = {
+                    ...current,
+                    visionChunks: allVisionChunks,
+                    mergedVisionChunks
+                };
+                void updateStore(newData);
+                return newData;
+            });
+        } catch (error) {
+            console.error('Failed to process vision data:', error);
+        } finally {
+            visionBuffer.length = 0;
+        }
     }
 
     async function handleNewChunk(chunk: TranscriptionChunk) {

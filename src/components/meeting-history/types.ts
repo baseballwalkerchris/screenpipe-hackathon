@@ -22,6 +22,8 @@ export interface Note {
     id: number;
     timestamp: string
     text: string
+    appName?: string
+    image?: string
   }
   
   export type ServiceStatus = 'available' | 'forbidden' | 'unavailable' | 'no_subscription'
