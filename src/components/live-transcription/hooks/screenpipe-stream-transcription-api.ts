@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { pipe } from "@screenpipe/browser"
 import { useToast } from "@/hooks/use-toast"
-import { TranscriptionChunk } from '../../meeting-history/types'
+import { TranscriptionChunk, VisionChunk } from '../../meeting-history/types'
 
 declare global {
   interface Window {
@@ -10,7 +10,8 @@ declare global {
 }
 
 export function useTranscriptionStream(
-  onNewChunk: (chunk: TranscriptionChunk) => void
+  onNewChunk: (chunk: TranscriptionChunk) => void,
+  onNewVisionChunk: (chunk: VisionChunk) => void // Separate callback for vision data
 ) {
   const streamingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -54,9 +55,19 @@ export function useTranscriptionStream(
             break
 
           }
-          console.log('new vision chunk:', chunk)
+          
+          console.log('new vision chunk:', {
+            text: chunk.data.text,
+          })
+  
+          const newVisionChunk: VisionChunk = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            text: chunk.data.text,
+          }
+          onNewVisionChunk(newVisionChunk)
         }
-      } 
+      }
 
       const handleStream = async () => {
         const stream = pipe.streamTranscriptions()

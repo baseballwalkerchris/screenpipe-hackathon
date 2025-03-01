@@ -28,6 +28,8 @@ export async function generateMeetingSummary(
       )
       .join("\n")
 
+    const visionContext = meeting.mergedVisionChunks
+
     // Add notes context if available
     const notesContext = meeting.notes.length > 0 
       ? `\nMeeting notes:\n${meeting.notes.map(n => n.text).join("\n")}`
@@ -45,6 +47,7 @@ export async function generateMeetingSummary(
 
     // First AI call for detailed analysis
     console.log("sending request to openai for meeting analysis")
+    console.log("vision context:", visionContext)
     const analysisResponse = await callOpenAI(openai, {
       model: settings.aiModel,
       messages: [
@@ -54,7 +57,7 @@ export async function generateMeetingSummary(
         },
         {
           role: "user" as const,
-          content: `please analyze our meeting:${titleContext}\n\n${transcriptContent}${notesContext}`,
+          content: `please analyze our meeting:${titleContext}\n\n${transcriptContent}${notesContext}\n${visionContext}`,
         },
       ],
       temperature: 0.7,

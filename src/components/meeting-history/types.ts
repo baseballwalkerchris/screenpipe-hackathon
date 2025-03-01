@@ -17,6 +17,12 @@ export interface Note {
     deviceName?: string
     deviceType?: string
   }
+
+  export interface VisionChunk {
+    id: number;
+    timestamp: string
+    text: string
+  }
   
   export type ServiceStatus = 'available' | 'forbidden' | 'unavailable' | 'no_subscription'
   export interface MeetingNote {
