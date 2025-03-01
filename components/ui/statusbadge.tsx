@@ -10,7 +10,7 @@ const statusClasses: Record<"active" | "inactive", string> = {
   const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusClasses[status]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        ● {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };

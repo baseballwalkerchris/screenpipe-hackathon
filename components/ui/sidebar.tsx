@@ -1,4 +1,4 @@
-import { Home, Grid } from "lucide-react";
+import { SearchIcon, GridIcon } from "../icons";
 import Link from "next/link";
 
 const Sidebar = () => {
@@ -9,13 +9,13 @@ const Sidebar = () => {
         <ul className="space-y-2">
           <li>
             <Link href="/" className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent justify-center w-full">
-              <Home className="w-5 h-5" />
+              <SearchIcon className="w-5 h-5" />
               Explore
             </Link>
           </li>
           <li>
             <Link href="/projects" className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent justify-center w-full">
-              <Grid className="w-5 h-5" />
+              <GridIcon className="w-5 h-5" />
               Projects
             </Link>
           </li>

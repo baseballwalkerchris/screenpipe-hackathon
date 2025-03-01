@@ -15,21 +15,21 @@ interface Project {
 
 const ProjectsTable = () => {
   return (
-    <div className="border border-border rounded-lg overflow-hidden shadow-sm">
-      <table className="w-full text-left">
-        <thead className="bg-gray-800 text-white">
+    <div className="rounded-lg overflow-hidden">
+      <table className="w-full text-left border-separate border-spacing-y-2">
+        <thead>
           <tr>
-            <th className="p-4">Name</th>
-            <th className="p-4">Status</th>
-            <th className="p-4">Responses</th>
+            <th className="bg-gray-800 text-white p-4 rounded-l-lg">Name</th>
+            <th className="bg-gray-800 text-white p-4">Status</th>
+            <th className="bg-gray-800 text-white p-4 rounded-r-lg">Responses</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody>
           {projects.map((project, index) => (
-            <tr key={index} className="bg-card hover:bg-gray-100 transition">
-              <td className="p-4">{project.name}</td>
-              <td className="p-4"><StatusBadge status={project.status} /></td>
-              <td className="p-4">{project.responses}</td>
+            <tr key={index}>
+              <td className="bg-white p-4 first:rounded-l-lg shadow-sm">{project.name}</td>
+              <td className="bg-white p-4 shadow-sm"><StatusBadge status={project.status} /></td>
+              <td className="bg-white p-4 last:rounded-r-lg shadow-sm">{project.responses}</td>
             </tr>
           ))}
         </tbody>
