@@ -17,8 +17,7 @@ const GLOBAL_STATE = {
 export function useTranscriptionService(mode?: TranscriptionMode) {
   const { chunks, setChunks, isLoading, fetchRecentChunks } = useRecentChunks()
   const { onNewChunk } = useMeetingContext()
-  const { onNewVisionChunk } = useMeetingContext()
-  const { startTranscriptionScreenpipe, stopTranscriptionScreenpipe } = useTranscriptionStream(onNewChunk, onNewVisionChunk)
+  const { startTranscriptionScreenpipe, stopTranscriptionScreenpipe } = useTranscriptionStream(onNewChunk)
   const { startTranscriptionBrowser, stopTranscriptionBrowser } = useBrowserTranscriptionStream(onNewChunk)
   const modeRef = useRef<TranscriptionMode | null>(null)
   const posthog = usePostHog()

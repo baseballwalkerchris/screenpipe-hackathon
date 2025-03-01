@@ -25,8 +25,6 @@ export async function handleStartNewMeeting(currentData?: LiveMeetingData | null
             id: `live-meeting-${startTime}`,
             chunks: [],
             mergedChunks: [],
-            visionChunks: [],
-            mergedVisionChunks: [],
             editedMergedChunks: {},
             speakerMappings: {},
             lastProcessedIndex: -1,

@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { pipe } from "@screenpipe/browser"
 import { useToast } from "@/hooks/use-toast"
-import { TranscriptionChunk, VisionChunk } from '../../meeting-history/types'
+import { TranscriptionChunk } from '../../meeting-history/types'
 
 declare global {
   interface Window {
@@ -10,8 +10,7 @@ declare global {
 }
 
 export function useTranscriptionStream(
-  onNewChunk: (chunk: TranscriptionChunk) => void,
-  onNewVisionChunk: (chunk: VisionChunk) => void // Separate callback for vision data
+  onNewChunk: (chunk: TranscriptionChunk) => void
 ) {
   const streamingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -46,37 +45,8 @@ export function useTranscriptionStream(
       const signal = abortControllerRef.current.signal
 
       // Create a separate async function to handle the stream
-      const handleVisionStream = async () => {
-        console.log('Starting vision stream...')
-        const visionStream = pipe.streamVision(true)
-        console.log('Vision stream created:', !!visionStream)
-
-        for await (const chunk of visionStream) {
-          if (signal.aborted) {
-            console.log('stream aborted, breaking loop')
-            break
-          }
-          
-          const appName = chunk.data.app_name?.toLowerCase() || ""
-          const text = chunk.data.text?.toLowerCase() || ""
-          const image = chunk.data.image?.toLowerCase() || ""
-  
-          const newVisionChunk: VisionChunk = {
-            id: Date.now(),
-            timestamp: new Date().toISOString(),
-            text: text,
-            appName: appName,
-            image: image
-          }
-          console.log('Created vision chunk:', newVisionChunk)
-          onNewVisionChunk(newVisionChunk)
-        }
-      }
-
       const handleStream = async () => {
         const stream = pipe.streamTranscriptions()
-        console.log('Stream created:', !!stream)
-
         try {
           for await (const chunk of stream) {
             // Check if aborted before processing each chunk
@@ -117,18 +87,6 @@ export function useTranscriptionStream(
           pipe.disconnect() // Explicitly disconnect the stream
         }
       }
-      
-      handleVisionStream().catch(error => {
-        console.error('stream handler error:', error)
-        streamingRef.current = false
-        toast({
-          title: "transcription error",
-          description: "failed to stream audio. retrying...",
-          variant: "destructive"
-        })
-        console.log('scheduling retry...')
-        setTimeout(startTranscriptionScreenpipe, 1000)
-      })
 
       // Start the stream handling
       handleStream().catch(error => {
