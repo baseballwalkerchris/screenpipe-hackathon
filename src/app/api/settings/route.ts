@@ -3,6 +3,7 @@ import { pipe } from "@screenpipe/js";
 import { NextResponse } from "next/server";
 import type { Settings } from "@screenpipe/js";
 import { getDefaultSettings } from "@screenpipe/browser";
+
 // Force Node.js runtime
 export const runtime = "nodejs"; // Add this line
 export const dynamic = "force-dynamic";
