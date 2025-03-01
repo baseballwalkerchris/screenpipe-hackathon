@@ -3,7 +3,7 @@
 import { SettingsProvider } from "@/lib/settings-provider";
 import { ClientOnly } from "@/lib/client-only";
 import { Inter } from "next/font/google";
-import { RealtimeScreen } from "@/components/ready-to-use-examples/realtime-screen";
+import { RealtimeScreen } from "@/components/realtime-screen";
 
 const inter = Inter({
   subsets: ["latin"],
