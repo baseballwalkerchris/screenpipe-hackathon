@@ -309,7 +309,8 @@ export function RealtimeScreen({
           },
           {
             role: "user",
-            content: `Please analyze this stream of vision and audio data:\n\n${formattedData}`,
+            content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that 
+            the user did not like or did not understand, and also point out things that the user liked or appreciated. :\n\n${formattedData}`,
           },
         ],
         temperature: 0.7,
