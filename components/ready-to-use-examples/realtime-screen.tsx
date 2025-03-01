@@ -15,8 +15,19 @@ import { createAiClient } from "@/app/api/settings/route";
 
 interface StreamChunk {
   timestamp: string;
-  type: "vision" | "audio";
+  type: "vision" | "audio" | "click";
   text: string;
+  element?: {
+    tagName: string;
+    id?: string;
+    className?: string;
+    text?: string;
+  };
+}
+
+interface MouseTrackerProps {
+  onDataChange?: (data: any, error: string | null) => void;
+  setStreamData?: React.Dispatch<React.SetStateAction<StreamChunk[]>>;
 }
 
 export function RealtimeScreen({
@@ -40,6 +51,7 @@ export function RealtimeScreen({
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   // Update ref when history changes
   useEffect(() => {
@@ -79,16 +91,40 @@ export function RealtimeScreen({
       // Start both streams
       try {
         console.log("Attempting to start vision stream...");
-        // Start vision streaming
         const visionStream = pipe.streamVision(withOcr);
         visionStreamRef.current = visionStream;
-        console.log("Vision stream initialized successfully");
 
         console.log("Attempting to start audio stream...");
-        // Start audio streaming
         const audioStream = await pipe.streamTranscriptions();
         audioStreamRef.current = audioStream;
-        console.log("Audio stream initialized successfully");
+
+        // Add mouse tracking stream
+        const mouseTrackingStream = new EventTarget();
+        const handleMouseClick = (e: MouseEvent) => {
+          const element = e.target as HTMLElement;
+          const clickEvent = {
+            timestamp: new Date().toISOString(),
+            type: "click" as const,
+            text: `Clicked ${element.tagName.toLowerCase()}${
+              element.id ? `#${element.id}` : ""
+            }${
+              element.textContent
+                ? ` containing "${element.textContent.trim()}"`
+                : ""
+            }`,
+            element: {
+              tagName: element.tagName.toLowerCase(),
+              id: element.id || undefined,
+              className: element.className || undefined,
+              text: element.textContent?.trim() || undefined,
+            },
+          };
+
+          setStreamData((prev) => [...prev, clickEvent]);
+          if (onDataChange) onDataChange(clickEvent, null);
+        };
+
+        window.addEventListener("click", handleMouseClick);
 
         // Handle vision stream
         (async () => {
@@ -176,6 +212,11 @@ export function RealtimeScreen({
             }
           }
         })();
+
+        // Add cleanup for mouse tracking to stopStreaming
+        cleanupRef.current = () => {
+          window.removeEventListener("click", handleMouseClick);
+        };
       } catch (error) {
         console.error("Failed to start streams:", error);
         setError(
@@ -205,6 +246,9 @@ export function RealtimeScreen({
     }
     if (audioStreamRef.current) {
       audioStreamRef.current.return?.();
+    }
+    if (cleanupRef.current) {
+      cleanupRef.current();
     }
 
     // Process collected stream data
@@ -299,25 +343,92 @@ export function RealtimeScreen({
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
 
-      const completion = await aiClient.chat.completions.create({
-        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision) and transcribed audio. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
-          },
-          {
-            role: "user",
-            content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that 
-            the user did not like or did not understand, and also point out things that the user liked or appreciated. :\n\n${formattedData}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      });
+      if (!aiClient?.chat?.completions) {
+        throw new Error("AI client not properly initialized");
+      }
 
-      setGptResponse(completion.choices[0].message.content);
+      // Split data into chunks of approximately 4000 characters
+      const chunks = [];
+      const chunkSize = 4000;
+      let currentChunk = "";
+
+      // Split by newlines to keep events together
+      const lines = formattedData.split("\n");
+
+      for (const line of lines) {
+        if (currentChunk.length + line.length + 1 > chunkSize) {
+          chunks.push(currentChunk);
+          currentChunk = line + "\n";
+        } else {
+          currentChunk += line + "\n";
+        }
+      }
+      if (currentChunk) {
+        chunks.push(currentChunk);
+      }
+
+      // Process chunks sequentially and combine results
+      let combinedResponse = "";
+
+      for (let i = 0; i < chunks.length; i++) {
+        const isFirstChunk = i === 0;
+        const isLastChunk = i === chunks.length - 1;
+
+        const systemPrompt = isFirstChunk
+          ? "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision), transcribed audio, and click events. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections."
+          : "Continue analyzing the following portion of the session data, building upon previous analysis:";
+
+        const userPrompt = isFirstChunk
+          ? `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that the user did not like or did not understand, and also point out things that the user liked or appreciated (Part ${
+              i + 1
+            }/${chunks.length}):\n\n${chunks[i]}`
+          : `Continuing analysis (Part ${i + 1}/${chunks.length}):\n\n${
+              chunks[i]
+            }`;
+
+        try {
+          const completion = await aiClient.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: userPrompt,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 5000,
+          });
+
+          if (!completion?.choices?.[0]?.message?.content) {
+            throw new Error("Invalid response from GPT");
+          }
+
+          const response = completion.choices[0].message.content;
+
+          if (chunks.length > 1) {
+            combinedResponse += `\n\nPart ${i + 1}/${
+              chunks.length
+            }:\n${response}`;
+          } else {
+            combinedResponse = response;
+          }
+
+          // Update the UI with progress
+          setGptResponse(combinedResponse);
+        } catch (apiError) {
+          console.error(`API call failed for chunk ${i + 1}:`, apiError);
+          throw new Error(
+            `Failed to get response from GPT service for part ${i + 1}`
+          );
+        }
+      }
+
+      // Final update with complete response
+      setGptResponse(combinedResponse);
     } catch (err) {
       console.error("Error calling GPT:", err);
       setError(
