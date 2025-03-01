@@ -9,13 +9,14 @@ import {
 } from "@screenpipe/browser";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { RealtimeAudio } from "./realtime-audio"; // Import with correct filename
+import { useSettings } from "@/lib/settings-provider";
 
 export function RealtimeScreen({
   onDataChange,
 }: {
   onDataChange?: (data: any, error: string | null) => void;
 }) {
+  const { settings } = useSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
     null
@@ -24,12 +25,28 @@ export function RealtimeScreen({
   const [error, setError] = useState<string | null>(null);
   const [withOcr, setWithOcr] = useState(true);
   const [withImages, setWithImages] = useState(true);
-  const streamRef = useRef<any>(null);
+  const [history, setHistory] = useState("");
+  const historyRef = useRef(history);
+  const visionStreamRef = useRef<any>(null);
+  const audioStreamRef = useRef<any>(null);
+
+  // Update ref when history changes
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
 
   const startStreaming = async () => {
     try {
       setError(null);
       setIsStreaming(true);
+
+      // Check if realtime transcription is enabled
+      if (!settings?.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
+        setError(
+          "Realtime audio transcription is not enabled in settings. Go to account -> settings -> recording -> enable realtime audiotranscription -> models to use: screenpipe cloud. Then refresh."
+        );
+        return;
+      }
 
       const originalConsoleError = console.error;
       console.error = function (msg, ...args) {
@@ -44,31 +61,85 @@ export function RealtimeScreen({
       };
 
       // Start vision streaming
-      const stream = pipe.streamVision(withOcr);
-      streamRef.current = stream;
+      const visionStream = pipe.streamVision(withOcr);
+      visionStreamRef.current = visionStream;
 
-      for await (const event of stream) {
-        if (event.data && isValidVisionEvent(event.data)) {
-          setVisionEvent(event.data);
-          if (onDataChange) onDataChange(event.data, null);
+      // Start audio streaming
+      const audioStream = pipe.streamTranscriptions();
+      audioStreamRef.current = audioStream;
+
+      // Handle vision stream
+      (async () => {
+        try {
+          for await (const event of visionStream) {
+            console.log("vision event:", event);
+            if (event.data && isValidVisionEvent(event.data)) {
+              setVisionEvent(event.data);
+              if (onDataChange) onDataChange(event.data, null);
+            }
+          }
+        } catch (error) {
+          console.error("Vision stream failed:", error);
+          setError(
+            error instanceof Error
+              ? `Vision stream error: ${error.message}`
+              : "Vision stream failed"
+          );
         }
-      }
+      })();
+
+      // Handle audio stream
+      (async () => {
+        try {
+          for await (const event of audioStream) {
+            console.log("audio event:", event);
+            if (event.choices?.[0]?.text) {
+              const chunk: TranscriptionChunk = {
+                transcription: event.choices[0].text,
+                timestamp:
+                  event.metadata?.timestamp || new Date().toISOString(),
+                device: event.metadata?.device || "unknown",
+                is_input: event.metadata?.isInput || false,
+                is_final: event.choices[0].finish_reason !== null,
+              };
+
+              setTranscription(chunk);
+              const newHistory = historyRef.current + " " + chunk.transcription;
+              setHistory(newHistory);
+
+              if (onDataChange) {
+                onDataChange(chunk, null);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Audio stream failed:", error);
+          setError(
+            error instanceof Error
+              ? `Audio stream error: ${error.message}`
+              : "Audio stream failed"
+          );
+        }
+      })();
 
       console.error = originalConsoleError;
     } catch (error) {
-      console.error("vision stream failed:", error);
+      console.error("Stream failed:", error);
       setError(
         error instanceof Error
-          ? `Failed to stream vision: ${error.message}`
-          : "Failed to stream vision"
+          ? `Failed to start streaming: ${error.message}`
+          : "Failed to start streaming"
       );
       setIsStreaming(false);
     }
   };
 
   const stopStreaming = () => {
-    if (streamRef.current) {
-      streamRef.current.return?.();
+    if (visionStreamRef.current) {
+      visionStreamRef.current.return?.();
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.return?.();
     }
     setIsStreaming(false);
   };
@@ -208,17 +279,6 @@ export function RealtimeScreen({
       {error && <p className="text-xs text-red-500">{error}</p>}
       {visionEvent && renderVisionContent(visionEvent)}
 
-      {/* Realtime Audio Transcription */}
-      <RealtimeAudio
-        onDataChange={(data, err) => {
-          if (err) {
-            setError(err);
-          } else {
-            setTranscription(data as TranscriptionChunk);
-          }
-        }}
-      />
-
       {/* Display transcription output */}
       {transcription && (
         <div className="bg-slate-100 rounded p-2 overflow-auto h-[130px] whitespace-pre-wrap font-mono text-xs mt-2">
@@ -226,6 +286,12 @@ export function RealtimeScreen({
             Live Transcription:
           </div>
           {transcription.transcription}
+          {history && (
+            <div className="mt-2 pt-2 border-t border-slate-200">
+              <div className="text-slate-600 font-semibold mb-1">History:</div>
+              {history}
+            </div>
+          )}
         </div>
       )}
 
