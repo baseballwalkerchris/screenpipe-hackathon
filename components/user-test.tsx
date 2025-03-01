@@ -19,7 +19,7 @@ interface StreamChunk {
   text: string;
 }
 
-export function RealtimeScreen({
+export function UserTest({
   onDataChange,
 }: {
   onDataChange?: (data: any, error: string | null) => void;
