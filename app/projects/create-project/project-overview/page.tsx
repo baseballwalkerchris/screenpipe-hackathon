@@ -27,6 +27,7 @@ export default function Page() {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [hasCompensation, setHasCompensation] = useState<"yes" | "no">("no");
+  const [compensationAmount, setCompensationAmount] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,23 +109,52 @@ export default function Page() {
                 Are you providing compensation for testers that sign up for your
                 project?
               </Label>
-              <RadioGroup
-                value={hasCompensation}
-                onValueChange={(value: "yes" | "no") =>
-                  setHasCompensation(value)
-                }
-                className="flex gap-4 mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="yes" />
-                  <Label htmlFor="yes">Yes</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="no" />
-                  <Label htmlFor="no">No</Label>
-                </div>
-              </RadioGroup>
+              <div className="flex gap-4 mt-2">
+                <Button
+                  type="button"
+                  variant={hasCompensation === "yes" ? "default" : "outline"}
+                  onClick={() => setHasCompensation("yes")}
+                  className={
+                    hasCompensation === "yes"
+                      ? "bg-[#ffa39e] hover:bg-[#ffb4ae] text-white"
+                      : ""
+                  }
+                >
+                  Yes
+                </Button>
+                <Button
+                  type="button"
+                  variant={hasCompensation === "no" ? "default" : "outline"}
+                  onClick={() => setHasCompensation("no")}
+                  className={
+                    hasCompensation === "no"
+                      ? "bg-[#ffa39e] hover:bg-[#ffb4ae] text-white"
+                      : ""
+                  }
+                >
+                  No
+                </Button>
+              </div>
             </div>
+
+            {hasCompensation === "yes" && (
+              <div className="mt-4">
+                <Label htmlFor="compensationAmount">Compensation Amount</Label>
+                <div className="relative mt-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <Input
+                    id="compensationAmount"
+                    type="number"
+                    value={compensationAmount}
+                    onChange={(e) => setCompensationAmount(e.target.value)}
+                    className="pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"
