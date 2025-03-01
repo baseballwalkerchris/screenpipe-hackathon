@@ -1,0 +1,10 @@
+[
+  {
+    "componentPath": "/pipes/example-pipe/components/ready-to-use-examples/realtime-screen.tsx",
+    "endpoint_optional": "SDK: pipe.streamVision",
+    "title": "Realtime Screen",
+    "llmModel": "claude-3.7-sonnet",
+    "llmUserPrompt": "create a component that streams real-time screen captures with OCR text using the pipe.streamVision API, showing both the screen image and extracted text with appropriate controls to start/stop streaming",
+    "llmContextUrl": "https://docs.screenpi.pe/docs/sdk-reference"
+  }
+]

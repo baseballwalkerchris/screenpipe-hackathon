@@ -1,62 +1,36 @@
-# Binaries for programs and examples
-*.exe
-*.exe~
-*.dll
-*.dylib
-*.so
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Test binary, built with `cargo test`
-*.test
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
 
-# Rust/Cargo specific files
-*target
-*Cargo.lock
+# testing
+/coverage
 
-# IDE specific files
-.idea/
-.vscode/
-*.rs.bk
+# next.js
+/.next/
+/out/
 
-# act cli
-.secrets
+# production
+/build
 
-# db 
-data/ 
-text_json/
-
-src-tauri/deno-*
-
-# Tauri signing key
-tauri_key_louis.key
-pnpm-lock.yaml
-
+# misc
 .DS_Store
+*.pem
 
-# Ignore onnxruntime-win-x64-gpu libraries
-onnxruntime-win-x64-gpu*/
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# ignore environment variables
-.env
+# local env files
+.env*.local
 
-# JavaScript stuff
-node_modules/
+# vercel
+.vercel
 
-
-cn 
-
-.next/
-
-
-# Python stuff
-venv/
-app.py
-*.pyc
-*.pyo
-*.pyd
-*.py
-*.pyw
-*.pyz
-*.py3
-*.py3w
-*.py3z
-__pycache__/
+# typescript
+*.tsbuildinfo
+next-env.d.ts
