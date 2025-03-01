@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-avatar": "^1.1.3",
     "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-label": "^2.1.0",
@@ -29,6 +30,7 @@
     "@types/lodash": "^4.17.13",
     "@types/nodemailer": "^6.4.17",
     "ai": "^4.0.18",
+    "avatar": "^0.1.0",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "cmdk": "0.2.1",
