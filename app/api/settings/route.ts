@@ -1,119 +1,79 @@
-import { pipe } from "@screenpipe/js";
-import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { OpenAI } from "openai"
+import type { Settings } from "@screenpipe/browser"
+import pThrottle from "p-throttle"
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+interface RetryOptions {
+    maxRetries?: number
+    initialDelay?: number
+}
 
-export async function GET() {
-  try {
-    const settingsManager = pipe.settings;
-    if (!settingsManager) {
-      throw new Error("settingsManager not found");
-    }
+// Add rate limit tracking
+const rateLimitState = {
+    isLimited: false,
+    resetTime: 0,
+    backoffUntil: 0
+}
 
-    // Get the pipe name from the current file path
-    const currentFilePath = __filename;
-    const pipesIndex = currentFilePath.indexOf('pipes');
-    const pipeName = currentFilePath.substring(pipesIndex + 6).split(path.sep)[0];
+// Update throttle to be more conservative
+const throttle = pThrottle({
+    limit: 2, // reduced from 3
+    interval: 2000, // increased from 1000
+})
+
+export function createAiClient(settings: Settings) {
+    return new OpenAI({
+        apiKey: settings.aiProviderType === "screenpipe-cloud" 
+            ? settings.user.token 
+            : settings.openaiApiKey,
+        baseURL: settings.aiUrl,
+        dangerouslyAllowBrowser: true,
+    })
+}
+
+// Throttled wrapper for OpenAI calls with retry logic
+export const callOpenAI = throttle(async (
+    openai: OpenAI,
+    params: Parameters<typeof openai.chat.completions.create>[0],
+    options: RetryOptions = {}
+) => {
+    const { maxRetries = 3, initialDelay = 1000 } = options
+    let lastError: Error | null = null
     
-    console.log(`loading settings for pipe: ${pipeName}`);
-
-    // Load persisted settings if they exist
-    const screenpipeDir = process.env.SCREENPIPE_DIR || process.cwd();
-    const settingsPath = path.join(
-      screenpipeDir,
-      "pipes",
-      pipeName,
-      "pipe.json"
-    );
-
-    try {
-      const settingsContent = await fs.readFile(settingsPath, "utf8");
-      const persistedSettings = JSON.parse(settingsContent);
-      console.log(`loaded persisted settings from ${settingsPath}`);
-
-      // Merge with current settings
-      const rawSettings = await settingsManager.getAll();
-      return NextResponse.json({
-        ...rawSettings,
-        customSettings: {
-          ...rawSettings.customSettings,
-          [pipeName]: {
-            ...(rawSettings.customSettings?.[pipeName] || {}),
-            ...persistedSettings,
-          },
-        },
-      });
-    } catch (err) {
-      // If no persisted settings, return normal settings
-      console.log(`no persisted settings found at ${settingsPath}, using defaults`);
-      const rawSettings = await settingsManager.getAll();
-      return NextResponse.json(rawSettings);
+    // Check if we're in backoff period
+    if (Date.now() < rateLimitState.backoffUntil) {
+        throw new Error('rate limit backoff in progress')
     }
-  } catch (error) {
-    console.error("failed to get settings:", error);
-    return NextResponse.json(
-      { error: "failed to get settings" },
-      { status: 500 }
-    );
-  }
-}
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            return await openai.chat.completions.create(params)
+        } catch (error: any) {
+            lastError = error
+            console.warn(`ai call failed (attempt ${attempt + 1}/${maxRetries}):`, {
+                error: error.message,
+                status: error.status,
+                type: error.type
+            })
 
-export async function PUT(request: Request) {
-  try {
-    const settingsManager = pipe.settings;
-    if (!settingsManager) {
-      throw new Error("settingsManager not found");
-    }
+            if (error.status === 429) { // Rate limit
+                rateLimitState.isLimited = true
+                rateLimitState.backoffUntil = Date.now() + (initialDelay * Math.pow(2, attempt))
+                console.log(`rate limit hit, backing off until ${new Date(rateLimitState.backoffUntil).toISOString()}`)
+                throw error // Don't retry on rate limit, let caller handle
+            }
+            
+            if (error.status === 503) { // Service unavailable
+                const delay = initialDelay * Math.pow(1.5, attempt)
+                await new Promise(resolve => setTimeout(resolve, delay))
+                continue
+            }
 
-    const body = await request.json();
-    const { key, value, isPartialUpdate, reset, namespace } = body;
-
-    if (reset) {
-      if (namespace) {
-        if (key) {
-          await settingsManager.setCustomSetting(namespace, key, undefined);
-        } else {
-          await settingsManager.updateNamespaceSettings(namespace, {});
+            // Don't retry on auth errors or invalid requests
+            if (error.status === 401 || error.status === 400) {
+                throw error
+            }
         }
-      } else {
-        if (key) {
-          await settingsManager.resetKey(key);
-        } else {
-          await settingsManager.reset();
-        }
-      }
-      return NextResponse.json({ success: true });
     }
-
-    if (namespace) {
-      if (isPartialUpdate) {
-        const currentSettings =
-          (await settingsManager.getNamespaceSettings(namespace)) || {};
-        await settingsManager.updateNamespaceSettings(namespace, {
-          ...currentSettings,
-          ...value,
-        });
-      } else {
-        await settingsManager.setCustomSetting(namespace, key, value);
-      }
-    } else if (isPartialUpdate) {
-      const serializedSettings = JSON.parse(JSON.stringify(value));
-      await settingsManager.update(serializedSettings);
-    } else {
-      const serializedValue = JSON.parse(JSON.stringify(value));
-      await settingsManager.set(key, serializedValue);
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("failed to update settings:", error);
-    return NextResponse.json(
-      { error: "failed to update settings" },
-      { status: 500 }
-    );
-  }
-}
-
+    
+    throw lastError || new Error('max retries exceeded')
+}) 

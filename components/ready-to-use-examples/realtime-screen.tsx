@@ -6,17 +6,25 @@ import {
   pipe,
   VisionEvent,
   type TranscriptionChunk,
+  type Settings as ScreenpipeSettings,
 } from "@screenpipe/browser";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useSettings } from "@/lib/settings-provider";
+import { usePipeSettings } from "@/lib/hooks/use-pipe-settings";
+import { createAiClient } from "@/app/api/settings/route";
+
+interface StreamChunk {
+  timestamp: string;
+  type: "vision" | "audio";
+  text: string;
+}
 
 export function RealtimeScreen({
   onDataChange,
 }: {
   onDataChange?: (data: any, error: string | null) => void;
 }) {
-  const { settings } = useSettings();
+  const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
     null
@@ -26,6 +34,9 @@ export function RealtimeScreen({
   const [withOcr, setWithOcr] = useState(true);
   const [withImages, setWithImages] = useState(true);
   const [history, setHistory] = useState("");
+  const [streamData, setStreamData] = useState<StreamChunk[]>([]);
+  const [isProcessingGPT, setIsProcessingGPT] = useState(false);
+  const [gptResponse, setGptResponse] = useState<string | null>(null);
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
@@ -39,6 +50,7 @@ export function RealtimeScreen({
     try {
       setError(null);
       setIsStreaming(true);
+      setStreamData([]); // Reset stream data when starting new stream
 
       // Check if realtime transcription is enabled
       if (!settings?.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
@@ -86,6 +98,20 @@ export function RealtimeScreen({
               if (event.data && isValidVisionEvent(event.data)) {
                 console.log("Received valid vision event:", event.data);
                 setVisionEvent(event.data);
+
+                // Add vision data to stream collection
+                if (event.data.text) {
+                  setStreamData((prev) => [
+                    ...prev,
+                    {
+                      timestamp:
+                        event.data.timestamp || new Date().toISOString(),
+                      type: "vision",
+                      text: event.data.text,
+                    },
+                  ]);
+                }
+
                 if (onDataChange) onDataChange(event.data, null);
               }
             }
@@ -119,6 +145,17 @@ export function RealtimeScreen({
 
                 console.log("Processing audio chunk:", chunk);
                 setTranscription(chunk);
+
+                // Add audio data to stream collection
+                setStreamData((prev) => [
+                  ...prev,
+                  {
+                    timestamp: chunk.timestamp,
+                    type: "audio",
+                    text: chunk.transcription,
+                  },
+                ]);
+
                 const newHistory =
                   historyRef.current + " " + chunk.transcription;
                 setHistory(newHistory);
@@ -162,12 +199,29 @@ export function RealtimeScreen({
   };
 
   const stopStreaming = () => {
-    setIsStreaming(false); // Set this first to stop the stream loops
+    setIsStreaming(false);
     if (visionStreamRef.current) {
       visionStreamRef.current.return?.();
     }
     if (audioStreamRef.current) {
       audioStreamRef.current.return?.();
+    }
+
+    // Process collected stream data
+    if (streamData.length > 0) {
+      const sortedData = [...streamData].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      const formattedData = sortedData
+        .map(
+          (chunk) =>
+            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+              chunk.type
+            }): ${chunk.text}`
+        )
+        .join("\n");
+      console.log("Formatted data for GPT:", formattedData);
     }
   };
 
@@ -233,22 +287,97 @@ export function RealtimeScreen({
     </div>
   );
 
+  const sendToGPT = async (formattedData: string) => {
+    try {
+      setIsProcessingGPT(true);
+      setGptResponse(null);
+      setError(null);
+
+      if (!settings?.screenpipeAppSettings) {
+        throw new Error("Screenpipe settings not available");
+      }
+
+      const aiClient = createAiClient(settings.screenpipeAppSettings);
+
+      const completion = await aiClient.chat.completions.create({
+        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision) and transcribed audio. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
+          },
+          {
+            role: "user",
+            content: `Please analyze this stream of vision and audio data:\n\n${formattedData}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+
+      setGptResponse(completion.choices[0].message.content);
+    } catch (err) {
+      console.error("Error calling GPT:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to process with GPT"
+      );
+    } finally {
+      setIsProcessingGPT(false);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <Button
-          onClick={isStreaming ? stopStreaming : startStreaming}
-          size="sm"
-        >
-          {isStreaming ? (
-            <>
-              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              Stop Streaming
-            </>
-          ) : (
-            "Start Streaming"
+        <div className="flex gap-2">
+          <Button
+            onClick={isStreaming ? stopStreaming : startStreaming}
+            size="sm"
+          >
+            {isStreaming ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Stop Streaming
+              </>
+            ) : (
+              "Start Streaming"
+            )}
+          </Button>
+
+          {!isStreaming && streamData.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const formattedData = streamData
+                  .sort(
+                    (a, b) =>
+                      new Date(a.timestamp).getTime() -
+                      new Date(b.timestamp).getTime()
+                  )
+                  .map(
+                    (chunk) =>
+                      `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+                        chunk.type
+                      }): ${chunk.text}`
+                  )
+                  .join("\n");
+                sendToGPT(formattedData);
+              }}
+              disabled={isProcessingGPT}
+            >
+              {isProcessingGPT ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Send to GPT"
+              )}
+            </Button>
           )}
-        </Button>
+        </div>
 
         <div className="flex gap-2">
           <Button
@@ -319,6 +448,53 @@ export function RealtimeScreen({
               {history}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Display collected stream chunks */}
+      {streamData.length > 0 && (
+        <div className="bg-slate-100 rounded p-2 overflow-auto max-h-[300px] whitespace-pre-wrap font-mono text-xs mt-2">
+          <div className="text-slate-600 font-semibold mb-2">
+            Collected Stream Data ({streamData.length} chunks):
+          </div>
+          <div className="space-y-1">
+            {[...streamData]
+              .sort(
+                (a, b) =>
+                  new Date(a.timestamp).getTime() -
+                  new Date(b.timestamp).getTime()
+              )
+              .map((chunk, index) => (
+                <div
+                  key={index}
+                  className={`p-1 rounded ${
+                    chunk.type === "vision" ? "bg-blue-50" : "bg-green-50"
+                  }`}
+                >
+                  <span className="text-gray-500">
+                    [{new Date(chunk.timestamp).toLocaleTimeString()}]
+                  </span>{" "}
+                  <span
+                    className={`font-semibold ${
+                      chunk.type === "vision"
+                        ? "text-blue-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    ({chunk.type})
+                  </span>
+                  : {chunk.text}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Display GPT Response */}
+      {gptResponse && (
+        <div className="bg-yellow-50 rounded p-3 overflow-auto max-h-[300px] whitespace-pre-wrap text-sm mt-2 border border-yellow-200">
+          <div className="text-slate-600 font-semibold mb-2">GPT Analysis:</div>
+          <div className="prose prose-sm max-w-none">{gptResponse}</div>
         </div>
       )}
 
