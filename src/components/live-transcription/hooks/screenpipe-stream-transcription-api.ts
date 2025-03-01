@@ -45,8 +45,22 @@ export function useTranscriptionStream(
       const signal = abortControllerRef.current.signal
 
       // Create a separate async function to handle the stream
+      const handleVisionStream = async () => {
+        const visionStream = pipe.streamVision(true)
+
+        for await (const chunk of visionStream) {
+          if (signal.aborted) {
+            console.log('stream aborted, breaking loop')
+            break
+
+          }
+          console.log('new vision chunk:', chunk)
+        }
+      } 
+
       const handleStream = async () => {
         const stream = pipe.streamTranscriptions()
+
         try {
           for await (const chunk of stream) {
             // Check if aborted before processing each chunk
@@ -87,6 +101,18 @@ export function useTranscriptionStream(
           pipe.disconnect() // Explicitly disconnect the stream
         }
       }
+      
+      handleVisionStream().catch(error => {
+        console.error('stream handler error:', error)
+        streamingRef.current = false
+        toast({
+          title: "transcription error",
+          description: "failed to stream audio. retrying...",
+          variant: "destructive"
+        })
+        console.log('scheduling retry...')
+        setTimeout(startTranscriptionScreenpipe, 1000)
+      })
 
       // Start the stream handling
       handleStream().catch(error => {
