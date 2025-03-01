@@ -6,10 +6,11 @@ import {
   pipe,
   VisionEvent,
   type TranscriptionChunk,
+  type Settings as ScreenpipeSettings,
 } from "@screenpipe/browser";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useSettings } from "@/lib/settings-provider";
+import { usePipeSettings } from "@/lib/hooks/use-pipe-settings";
 import { createAiClient } from "@/app/api/settings/route";
 
 interface StreamChunk {
@@ -23,7 +24,7 @@ export function RealtimeScreen({
 }: {
   onDataChange?: (data: any, error: string | null) => void;
 }) {
-  const { settings } = useSettings();
+  const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
     null
@@ -292,17 +293,14 @@ export function RealtimeScreen({
       setGptResponse(null);
       setError(null);
 
-      if (!settings) {
-        throw new Error("Settings not available");
+      if (!settings?.screenpipeAppSettings) {
+        throw new Error("Screenpipe settings not available");
       }
 
-      const aiClient = createAiClient(settings);
+      const aiClient = createAiClient(settings.screenpipeAppSettings);
 
       const completion = await aiClient.chat.completions.create({
-        model:
-          settings.aiProviderType === "screenpipe-cloud"
-            ? "gpt-4"
-            : "gpt-3.5-turbo",
+        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
         messages: [
           {
             role: "system",
