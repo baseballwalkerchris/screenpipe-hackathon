@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useSettings } from "@/lib/settings-provider";
+import { createAiClient } from "@/app/api/settings/route";
 
 interface StreamChunk {
   timestamp: string;
@@ -33,6 +34,8 @@ export function RealtimeScreen({
   const [withImages, setWithImages] = useState(true);
   const [history, setHistory] = useState("");
   const [streamData, setStreamData] = useState<StreamChunk[]>([]);
+  const [isProcessingGPT, setIsProcessingGPT] = useState(false);
+  const [gptResponse, setGptResponse] = useState<string | null>(null);
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
@@ -283,6 +286,49 @@ export function RealtimeScreen({
     </div>
   );
 
+  const sendToGPT = async (formattedData: string) => {
+    try {
+      setIsProcessingGPT(true);
+      setGptResponse(null);
+      setError(null);
+
+      if (!settings) {
+        throw new Error("Settings not available");
+      }
+
+      const aiClient = createAiClient(settings);
+
+      const completion = await aiClient.chat.completions.create({
+        model:
+          settings.aiProviderType === "screenpipe-cloud"
+            ? "gpt-4"
+            : "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision) and transcribed audio. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
+          },
+          {
+            role: "user",
+            content: `Please analyze this stream of vision and audio data:\n\n${formattedData}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+
+      setGptResponse(completion.choices[0].message.content);
+    } catch (err) {
+      console.error("Error calling GPT:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to process with GPT"
+      );
+    } finally {
+      setIsProcessingGPT(false);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
@@ -319,11 +365,18 @@ export function RealtimeScreen({
                       }): ${chunk.text}`
                   )
                   .join("\n");
-                console.log("Sending to GPT:", formattedData);
-                // Add your GPT API call here
+                sendToGPT(formattedData);
               }}
+              disabled={isProcessingGPT}
             >
-              Send to GPT
+              {isProcessingGPT ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Send to GPT"
+              )}
             </Button>
           )}
         </div>
@@ -436,6 +489,14 @@ export function RealtimeScreen({
                 </div>
               ))}
           </div>
+        </div>
+      )}
+
+      {/* Display GPT Response */}
+      {gptResponse && (
+        <div className="bg-yellow-50 rounded p-3 overflow-auto max-h-[300px] whitespace-pre-wrap text-sm mt-2 border border-yellow-200">
+          <div className="text-slate-600 font-semibold mb-2">GPT Analysis:</div>
+          <div className="prose prose-sm max-w-none">{gptResponse}</div>
         </div>
       )}
 
