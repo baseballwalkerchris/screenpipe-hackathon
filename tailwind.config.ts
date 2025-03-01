@@ -27,6 +27,8 @@ const config: Config = {
   			]
   		},
   		colors: {
+			"button-orange": "hsl(var(--button-orange))",
+			"secondary-background": "hsl(var(--secondary-background))",
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
