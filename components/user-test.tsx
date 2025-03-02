@@ -15,8 +15,19 @@ import { createAiClient } from "@/app/api/settings/route";
 
 interface StreamChunk {
   timestamp: string;
-  type: "vision" | "audio";
+  type: "vision" | "audio" | "click";
   text: string;
+  element?: {
+    tagName: string;
+    id?: string;
+    className?: string;
+    text?: string;
+  };
+}
+
+interface MouseTrackerProps {
+  onDataChange?: (data: any, error: string | null) => void;
+  setStreamData?: React.Dispatch<React.SetStateAction<StreamChunk[]>>;
 }
 
 export function UserTest({
@@ -40,6 +51,7 @@ export function UserTest({
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   // Update ref when history changes
   useEffect(() => {
@@ -79,16 +91,40 @@ export function UserTest({
       // Start both streams
       try {
         console.log("Attempting to start vision stream...");
-        // Start vision streaming
         const visionStream = pipe.streamVision(withOcr);
         visionStreamRef.current = visionStream;
-        console.log("Vision stream initialized successfully");
 
         console.log("Attempting to start audio stream...");
-        // Start audio streaming
         const audioStream = await pipe.streamTranscriptions();
         audioStreamRef.current = audioStream;
-        console.log("Audio stream initialized successfully");
+
+        // Add mouse tracking stream
+        const mouseTrackingStream = new EventTarget();
+        const handleMouseClick = (e: MouseEvent) => {
+          const element = e.target as HTMLElement;
+          const clickEvent = {
+            timestamp: new Date().toISOString(),
+            type: "click" as const,
+            text: `Clicked ${element.tagName.toLowerCase()}${
+              element.id ? `#${element.id}` : ""
+            }${
+              element.textContent
+                ? ` containing "${element.textContent.trim()}"`
+                : ""
+            }`,
+            element: {
+              tagName: element.tagName.toLowerCase(),
+              id: element.id || undefined,
+              className: element.className || undefined,
+              text: element.textContent?.trim() || undefined,
+            },
+          };
+
+          setStreamData((prev) => [...prev, clickEvent]);
+          if (onDataChange) onDataChange(clickEvent, null);
+        };
+
+        window.addEventListener("click", handleMouseClick);
 
         // Handle vision stream
         (async () => {
@@ -176,6 +212,11 @@ export function UserTest({
             }
           }
         })();
+
+        // Add cleanup for mouse tracking to stopStreaming
+        cleanupRef.current = () => {
+          window.removeEventListener("click", handleMouseClick);
+        };
       } catch (error) {
         console.error("Failed to start streams:", error);
         setError(
@@ -205,6 +246,9 @@ export function UserTest({
     }
     if (audioStreamRef.current) {
       audioStreamRef.current.return?.();
+    }
+    if (cleanupRef.current) {
+      cleanupRef.current();
     }
 
     // Process collected stream data
@@ -298,28 +342,50 @@ export function UserTest({
       }
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
+      console.log("AI Client:", aiClient); // Debug log
 
-      const completion = await aiClient.chat.completions.create({
-        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision) and transcribed audio. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
-          },
-          {
-            role: "user",
-            content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that 
-            the user did not like or did not understand, and also point out things that the user liked or appreciated. :\n\n${formattedData}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      });
+      if (!aiClient?.chat?.completions) {
+        throw new Error("AI client not properly initialized");
+      }
 
-      setGptResponse(completion.choices[0].message.content);
+      try {
+        const completion = await aiClient.chat.completions
+          .create({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision), transcribed audio, and click events. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
+              },
+              {
+                role: "user",
+                content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that the user did not like or did not understand, and also point out things that the user liked or appreciated:\n\n${formattedData}`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 500,
+          })
+          .catch((error) => {
+            console.error("OpenAI API Error:", error);
+            throw new Error(`OpenAI API Error: ${error.message}`);
+          });
+
+        if (!completion?.choices?.[0]?.message?.content) {
+          throw new Error("Invalid response from GPT");
+        }
+
+        setGptResponse(completion.choices[0].message.content);
+      } catch (apiError) {
+        console.error("API call failed:", apiError);
+        throw new Error(
+          `Failed to get response from GPT service: ${
+            apiError instanceof Error ? apiError.message : "Unknown error"
+          }`
+        );
+      }
     } catch (err) {
-      console.error("Error calling GPT:", err);
+      console.error("Error in sendToGPT:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process with GPT"
       );
@@ -437,7 +503,7 @@ export function UserTest({
       {visionEvent && renderVisionContent(visionEvent)}
 
       {/* Display transcription output */}
-      {transcription && (
+      {/* {transcription && (
         <div className="bg-slate-100 rounded p-2 overflow-auto h-[130px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-1">
             Live Transcription:
@@ -450,10 +516,10 @@ export function UserTest({
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {/* Display collected stream chunks */}
-      {streamData.length > 0 && (
+      {/* {streamData.length > 0 && (
         <div className="bg-slate-100 rounded p-2 overflow-auto max-h-[300px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-2">
             Collected Stream Data ({streamData.length} chunks):
@@ -489,7 +555,7 @@ export function UserTest({
               ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Display GPT Response */}
       {gptResponse && (
