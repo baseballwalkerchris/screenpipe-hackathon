@@ -13,9 +13,8 @@ interface ProjectStagesProps {
 export function ProjectStages({ currentStage }: ProjectStagesProps) {
   const stages: Stage[] = [
     { id: 1, name: "Project Overview", isActive: currentStage === 1 },
-    { id: 2, name: "Prototype", isActive: currentStage === 2 },
-    { id: 3, name: "Tasks", isActive: currentStage === 3 },
-    { id: 4, name: "Share", isActive: currentStage === 4 },
+    { id: 2, name: "Tasks", isActive: currentStage === 2 },
+    { id: 3, name: "Share", isActive: currentStage === 3 },
   ];
 
   return (
