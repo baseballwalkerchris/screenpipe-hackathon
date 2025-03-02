@@ -1,6 +1,5 @@
 "use client";
 
-import { Inter } from "next/font/google";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,19 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { TopBar } from "@/app/components/TopBar";
 import { ProjectStages } from "@/app/components/ProjectStages";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
-const stages = [
-  { id: 1, name: "Project Overview", isActive: true },
-  { id: 2, name: "Prototype", isActive: false },
-  { id: 3, name: "Tasks", isActive: false },
-  { id: 4, name: "Share", isActive: false },
-];
+import { NavigationSidebar } from "@/app/components/NavigationSidebar";
 
 export default function Page() {
   const router = useRouter();
@@ -33,7 +20,7 @@ export default function Page() {
   const [compensationAmount, setCompensationAmount] = useState("");
 
   useEffect(() => {
-    const nameFromUrl = searchParams.get('name');
+    const nameFromUrl = searchParams.get("name");
     if (nameFromUrl) {
       setProjectName(decodeURIComponent(nameFromUrl));
     }
@@ -46,23 +33,28 @@ export default function Page() {
       projectDescription,
       hasCompensation,
     });
-    
+
     // Get the projectId from the URL params
     const projectId = params.projectId as string;
-    
+
     // Navigate to prototype page with project info
-    router.push(`/projects/create-project/${projectId}/prototype?name=${encodeURIComponent(projectName)}`);
+    router.push(
+      `/projects/create-project/${projectId}/prototype?name=${encodeURIComponent(
+        projectName
+      )}`
+    );
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <TopBar projectName={projectName || "Project #1"} />
       <div className="flex flex-1">
+        <NavigationSidebar />
         <ProjectStages currentStage={1} />
 
         {/* Main content */}
         <div className="flex-1 p-6">
-          <div className="max-w-2xl mx-auto bg-white rounded-lg  p-6">
+          <div className="max-w-2xl mx-auto bg-white rounded-lg p-6">
             <div className="mb-6">
               <div className="flex items-center gap-2">
                 <div className="bg-[#ff4d4f] text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
@@ -169,4 +161,4 @@ export default function Page() {
       </div>
     </div>
   );
-} 
+}
