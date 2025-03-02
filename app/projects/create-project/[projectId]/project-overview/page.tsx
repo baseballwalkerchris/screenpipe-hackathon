@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { TopBar } from "@/app/components/TopBar";
-import { ProjectStages } from "@/app/components/ProjectStages";
-import { NavigationSidebar } from "@/app/components/NavigationSidebar";
+import { TopBar } from "@/components/ui/TopBar";
+import { ProjectStages } from "@/components/ui/ProjectStages";
+import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
+import Image from "next/image";
 
 export default function Page() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function Page() {
 
     // Navigate to prototype page with project info
     router.push(
-      `/projects/create-project/${projectId}/prototype?name=${encodeURIComponent(
+      `/projects/create-project/${projectId}/tasks?name=${encodeURIComponent(
         projectName
       )}`
     );
@@ -57,8 +58,13 @@ export default function Page() {
           <div className="max-w-2xl mx-auto bg-white rounded-lg p-6">
             <div className="mb-6">
               <div className="flex items-center gap-2">
-                <div className="bg-[#ff4d4f] text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
-                  1
+                <div className="w-11 h-11 flex items-center justify-center bg-gray-100 rounded-lg">
+                  <Image
+                    src="/book.svg"
+                    alt="Project Overview"
+                    width={26}
+                    height={26}
+                  />
                 </div>
                 <h1 className="text-2xl font-semibold text-gray-900">
                   Project Overview
