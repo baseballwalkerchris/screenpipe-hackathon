@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { TopBar } from "@/app/components/TopBar";
 import { ProjectStages } from "@/app/components/ProjectStages";
+import { NavigationSidebar } from "@/app/components/NavigationSidebar";
 
 export default function Page() {
   const router = useRouter();
@@ -24,9 +25,10 @@ export default function Page() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white ">
+    <div className="flex flex-col min-h-screen bg-white">
       <TopBar projectName="Project #1" />
       <div className="flex flex-1">
+        <NavigationSidebar />
         <ProjectStages currentStage={2} />
 
         {/* Main content */}

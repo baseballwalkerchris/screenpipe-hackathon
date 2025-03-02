@@ -1,42 +1,21 @@
 "use client";
 
-import { Inter } from "next/font/google";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { TopBar } from "@/app/components/TopBar";
 import { ProjectStages } from "@/app/components/ProjectStages";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
-const stages = [
-  { id: 1, name: "Project Overview", isActive: true },
-  { id: 2, name: "Prototype", isActive: false },
-  { id: 3, name: "Tasks", isActive: false },
-  { id: 4, name: "Share", isActive: false },
-];
+import { NavigationSidebar } from "@/app/components/NavigationSidebar";
 
 export default function Page() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [hasCompensation, setHasCompensation] = useState<"yes" | "no">("no");
   const [compensationAmount, setCompensationAmount] = useState("");
-
-  useEffect(() => {
-    const nameFromUrl = searchParams.get('name');
-    if (nameFromUrl) {
-      setProjectName(decodeURIComponent(nameFromUrl));
-    }
-  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,18 +25,18 @@ export default function Page() {
       hasCompensation,
     });
     router.push("/projects/create-project/prototype");
-    // Here you would typically save the project data
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <TopBar projectName={projectName || "Project #1"} />
       <div className="flex flex-1">
+        <NavigationSidebar />
         <ProjectStages currentStage={1} />
 
         {/* Main content */}
         <div className="flex-1 p-6">
-          <div className="max-w-2xl mx-auto bg-white rounded-lg  p-6">
+          <div className="max-w-2xl mx-auto bg-white rounded-lg p-6">
             <div className="mb-6">
               <div className="flex items-center gap-2">
                 <div className="bg-[#ff4d4f] text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
@@ -164,4 +143,4 @@ export default function Page() {
       </div>
     </div>
   );
-} 
+}
