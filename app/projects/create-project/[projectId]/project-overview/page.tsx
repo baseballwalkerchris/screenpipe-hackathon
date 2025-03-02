@@ -37,7 +37,7 @@ export default function Page() {
     // Get the projectId from the URL params
     const projectId = params.projectId as string;
 
-    // Navigate to tasks page with project info
+    // Navigate to prototype page with project info
     router.push(
       `/projects/create-project/${projectId}/tasks?name=${encodeURIComponent(
         projectName

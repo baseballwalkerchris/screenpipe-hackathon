@@ -27,7 +27,6 @@ export default function TasksPage() {
   const params = useParams();
   const [projectName, setProjectName] = useState("");
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
-
   useEffect(() => {
     const nameFromUrl = searchParams.get("name");
     if (nameFromUrl) {
