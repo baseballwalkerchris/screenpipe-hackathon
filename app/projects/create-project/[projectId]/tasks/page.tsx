@@ -52,16 +52,15 @@ export default function TasksPage() {
             {/* Task list */}
             <div className="space-y-4">
               {tasks.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">No tasks created yet.</p>
-                  <Button
-                    onClick={() => setIsModalOpen(true)}
-                    variant="link"
-                    className="text-[#ff4d4f] mt-2"
-                  >
-                    Create your first task
-                  </Button>
-                </div>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="w-full border-2 border-[#ff4d4f] rounded-lg py-4 hover:bg-[#fff1f0] transition-colors"
+                >
+                  <div className="flex items-center justify-center text-[#ff4d4f] gap-2">
+                    <Plus size={20} />
+                    <span className="text-lg">New Task</span>
+                  </div>
+                </button>
               ) : (
                 tasks.map((task) => (
                   <div
