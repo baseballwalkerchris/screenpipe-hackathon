@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface Stage {
   id: number;
   name: string;
@@ -30,13 +32,37 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
             }`}
           >
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 text-sm ${
-                stage.isActive
-                  ? "bg-[#ff4d4f] text-white"
-                  : "bg-white border border-gray-200 text-gray-500"
+              className={`w-6 h-6 flex items-center justify-center mr-3 text-sm ${
+                stage.isActive ? "text-[#ff4d4f]" : "text-gray-500"
               }`}
             >
-              {stage.id}
+              {stage.id === 1 ? (
+                <Image
+                  src="/book.svg"
+                  alt="Project Overview"
+                  width={26}
+                  height={26}
+                  className={""}
+                />
+              ) : stage.id === 2 ? (
+                <Image
+                  src="/checkboxes-stage.svg"
+                  alt="Tasks"
+                  width={40}
+                  height={40}
+                  className={""}
+                />
+              ) : stage.id === 3 ? (
+                <Image
+                  src="/share.svg"
+                  alt="Share"
+                  width={26}
+                  height={26}
+                  className={""}
+                />
+              ) : (
+                stage.id
+              )}
             </div>
             <span className="font-medium text-sm">{stage.name}</span>
           </div>
