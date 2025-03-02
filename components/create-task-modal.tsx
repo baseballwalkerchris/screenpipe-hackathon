@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,16 +17,30 @@ interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateTask: (task: Omit<Task, "id">) => void;
+  editingTask?: Task | null;
 }
 
 export function CreateTaskModal({
   isOpen,
   onClose,
   onCreateTask,
+  editingTask,
 }: CreateTaskModalProps) {
   const [task, setTask] = useState("");
   const [description, setDescription] = useState("");
   const [prototypeLink, setPrototypeLink] = useState("");
+
+  useEffect(() => {
+    if (editingTask) {
+      setTask(editingTask.title);
+      setDescription(editingTask.description);
+      setPrototypeLink(editingTask.prototypeLink);
+    } else {
+      setTask("");
+      setDescription("");
+      setPrototypeLink("");
+    }
+  }, [editingTask]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +49,6 @@ export function CreateTaskModal({
       description,
       prototypeLink,
     });
-    setTask("");
-    setDescription("");
-    setPrototypeLink("");
     onClose();
   };
 
@@ -49,7 +60,9 @@ export function CreateTaskModal({
         <div className="p-12 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-10 pb-6 border-b">
-            <h1 className="text-2xl font-semibold">Edit Task</h1>
+            <h1 className="text-2xl font-semibold">
+              {editingTask ? "Edit Task" : "Create Task"}
+            </h1>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"

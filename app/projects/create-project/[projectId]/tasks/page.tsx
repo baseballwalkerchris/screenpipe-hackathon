@@ -22,6 +22,7 @@ interface Task {
 export default function TasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const searchParams = useSearchParams();
   const params = useParams();
   const [projectName, setProjectName] = useState("");
@@ -34,11 +35,32 @@ export default function TasksPage() {
   }, [searchParams]);
 
   const handleCreateTask = (newTask: Omit<Task, "id">) => {
-    const task: Task = {
-      ...newTask,
-      id: Math.random().toString(36).substr(2, 9),
-    };
-    setTasks((prev) => [...prev, task]);
+    if (editingTask) {
+      // Update existing task
+      setTasks(
+        tasks.map((task) =>
+          task.id === editingTask.id ? { ...task, ...newTask } : task
+        )
+      );
+      setEditingTask(null);
+    } else {
+      // Create new task
+      const task: Task = {
+        ...newTask,
+        id: Math.random().toString(36).substr(2, 9),
+      };
+      setTasks((prev) => [...prev, task]);
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingTask(null);
   };
 
   return (
@@ -75,7 +97,8 @@ export default function TasksPage() {
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white border rounded-lg py-6 px-6 hover:shadow-md transition-shadow flex items-center gap-4"
+                  className="bg-white border rounded-lg py-6 px-6 hover:shadow-md transition-shadow flex items-center gap-4 cursor-pointer"
+                  onClick={() => handleEditTask(task)}
                 >
                   <Image
                     src="/checkbox.svg"
@@ -103,8 +126,9 @@ export default function TasksPage() {
 
       <CreateTaskModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         onCreateTask={handleCreateTask}
+        editingTask={editingTask}
       />
     </div>
   );
