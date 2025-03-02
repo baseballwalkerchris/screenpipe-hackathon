@@ -103,13 +103,23 @@ export function CreateTaskModal({
 
               <div>
                 <Label htmlFor="prototypeLink">Prototype Link</Label>
-                <Input
-                  id="prototypeLink"
-                  value={prototypeLink}
-                  onChange={(e) => setPrototypeLink(e.target.value)}
-                  placeholder="Enter prototype link"
-                  className="mt-2"
-                />
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="prototypeLink"
+                    value={prototypeLink}
+                    onChange={(e) => setPrototypeLink(e.target.value)}
+                    placeholder="Enter prototype link"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      /* Handle enter click */
+                    }}
+                    className="bg-[#ff4d4f] hover:bg-[#ff7875] text-white px-6 shrink-0"
+                  >
+                    Enter
+                  </Button>
+                </div>
                 <div className="mt-4">
                   <Label>Prototype source options</Label>
                   <div className="flex gap-4 mt-2">
