@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { TopBar } from "@/app/components/TopBar";
-import { ProjectStages } from "@/app/components/ProjectStages";
-import { NavigationSidebar } from "@/app/components/NavigationSidebar";
+import { TopBar } from "@/components/ui/TopBar";
+import { ProjectStages } from "@/components/ui/ProjectStages";
+import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { AIAssistant } from "@/app/components/AIAssistant";
+import { AIAssistant } from "@/components/ui/AIAssistant";
 
 interface Question {
   text: string;
