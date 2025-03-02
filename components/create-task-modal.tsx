@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { X, Trash2 } from "lucide-react";
+import { FigmaEmbed } from "@/components/ui/figma-embed";
 
 interface Task {
   id: string;
@@ -32,19 +33,74 @@ export function CreateTaskModal({
   const [selectedSource, setSelectedSource] = useState<
     "figma" | "xd" | "sketch" | null
   >(null);
+  const [validFigmaUrl, setValidFigmaUrl] = useState("");
+
+  // Validate and transform Figma URL
+  const isValidFigmaUrl = (url: string) => {
+    return (
+      url.startsWith("https://www.figma.com/embed") ||
+      url.startsWith("https://embed.figma.com") ||
+      url.startsWith("https://www.figma.com/file") ||
+      url.startsWith("https://www.figma.com/proto")
+    );
+  };
+
+  const getEmbedUrl = (url: string) => {
+    if (
+      url.startsWith("https://www.figma.com/embed") ||
+      url.startsWith("https://embed.figma.com")
+    ) {
+      return url;
+    }
+
+    // Convert file URLs
+    if (url.includes("/file/")) {
+      return url.replace(
+        "https://www.figma.com/file/",
+        "https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/file/"
+      );
+    }
+
+    // Convert prototype URLs
+    if (url.includes("/proto/")) {
+      return url.replace(
+        "https://www.figma.com/proto/",
+        "https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/proto/"
+      );
+    }
+
+    return url;
+  };
 
   useEffect(() => {
     if (editingTask) {
       setTask(editingTask.title);
       setDescription(editingTask.description);
       setPrototypeLink(editingTask.prototypeLink);
+      if (isValidFigmaUrl(editingTask.prototypeLink)) {
+        setSelectedSource("figma");
+        setValidFigmaUrl(getEmbedUrl(editingTask.prototypeLink));
+      }
     } else {
       setTask("");
       setDescription("");
       setPrototypeLink("");
       setSelectedSource(null);
+      setValidFigmaUrl("");
     }
   }, [editingTask]);
+
+  useEffect(() => {
+    if (
+      selectedSource === "figma" &&
+      prototypeLink &&
+      isValidFigmaUrl(prototypeLink)
+    ) {
+      setValidFigmaUrl(getEmbedUrl(prototypeLink));
+    } else {
+      setValidFigmaUrl("");
+    }
+  }, [prototypeLink, selectedSource]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +110,13 @@ export function CreateTaskModal({
       prototypeLink,
     });
     onClose();
+  };
+
+  const handleEnterClick = () => {
+    if (prototypeLink && isValidFigmaUrl(prototypeLink)) {
+      setSelectedSource("figma");
+      setValidFigmaUrl(getEmbedUrl(prototypeLink));
+    }
   };
 
   if (!isOpen) return null;
@@ -103,13 +166,21 @@ export function CreateTaskModal({
 
               <div>
                 <Label htmlFor="prototypeLink">Prototype Link</Label>
-                <Input
-                  id="prototypeLink"
-                  value={prototypeLink}
-                  onChange={(e) => setPrototypeLink(e.target.value)}
-                  placeholder="Enter prototype link"
-                  className="mt-2"
-                />
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="prototypeLink"
+                    value={prototypeLink}
+                    onChange={(e) => setPrototypeLink(e.target.value)}
+                    placeholder="Enter prototype link"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleEnterClick}
+                    className="bg-[#ff4d4f] hover:bg-[#ff7875] text-white px-6 shrink-0"
+                  >
+                    Enter
+                  </Button>
+                </div>
                 <div className="mt-4">
                   <Label>Prototype source options</Label>
                   <div className="flex gap-4 mt-2">
@@ -168,19 +239,31 @@ export function CreateTaskModal({
 
             {/* Preview section */}
             <div>
-              <h2 className="text-lg font-medium mb-4">Preview</h2>
-              <div className="bg-[#1a1a1a] rounded-lg p-6 flex items-center justify-center">
-                <div className="relative w-[240px] h-[480px] bg-white rounded-[32px] p-2 shadow-xl">
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[100px] h-[20px] bg-black rounded-b-[16px]"></div>
-                  <div className="w-full h-full bg-gray-50 rounded-[28px] flex items-center justify-center">
-                    <p className="text-sm text-gray-500 text-center">
-                      A preview of your prototype and task
-                      <br />
-                      will appear here once your inputted
-                      <br />
-                      information has been processed.
-                    </p>
-                  </div>
+              <h2 className="text-lg font-medium mb-2">Preview</h2>
+              <div className="bg-[#000000] rounded-lg p-4 flex items-center justify-center h-[520px] w-full">
+                <div className="relative w-[240px] h-[480px]">
+                  {selectedSource === "figma" && validFigmaUrl ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <FigmaEmbed
+                        embedUrl={validFigmaUrl}
+                        width="360"
+                        height="520"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-white rounded-[32px] p-2 shadow-xl">
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[100px] h-[20px] bg-black rounded-b-[16px]"></div>
+                      <div className="w-full h-full bg-gray-50 rounded-[28px] flex items-center justify-center">
+                        <p className="text-sm text-gray-500 text-center">
+                          A preview of your prototype and task
+                          <br />
+                          will appear here once your inputted
+                          <br />
+                          information has been processed.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
