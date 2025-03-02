@@ -29,6 +29,9 @@ export function CreateTaskModal({
   const [task, setTask] = useState("");
   const [description, setDescription] = useState("");
   const [prototypeLink, setPrototypeLink] = useState("");
+  const [selectedSource, setSelectedSource] = useState<
+    "figma" | "xd" | "sketch" | null
+  >(null);
 
   useEffect(() => {
     if (editingTask) {
@@ -39,6 +42,7 @@ export function CreateTaskModal({
       setTask("");
       setDescription("");
       setPrototypeLink("");
+      setSelectedSource(null);
     }
   }, [editingTask]);
 
@@ -109,24 +113,54 @@ export function CreateTaskModal({
                 <div className="mt-4">
                   <Label>Prototype source options</Label>
                   <div className="flex gap-4 mt-2">
-                    <Image
-                      src="/figma-logo.svg"
-                      alt="Figma"
-                      width={24}
-                      height={24}
-                    />
-                    <Image
-                      src="/xd-logo.svg"
-                      alt="Adobe XD"
-                      width={24}
-                      height={24}
-                    />
-                    <Image
-                      src="/sketch-logo.svg"
-                      alt="Sketch"
-                      width={24}
-                      height={24}
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSource("figma")}
+                      className={`p-3 rounded-lg border transition-all ${
+                        selectedSource === "figma"
+                          ? "border-[#ff4d4f] bg-[#fff2f0]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Image
+                        src="/figma-logo.svg"
+                        alt="Figma"
+                        width={24}
+                        height={24}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSource("xd")}
+                      className={`p-3 rounded-lg border transition-all ${
+                        selectedSource === "xd"
+                          ? "border-[#ff4d4f] bg-[#fff2f0]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Image
+                        src="/xd-logo.svg"
+                        alt="Adobe XD"
+                        width={24}
+                        height={24}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSource("sketch")}
+                      className={`p-3 rounded-lg border transition-all ${
+                        selectedSource === "sketch"
+                          ? "border-[#ff4d4f] bg-[#fff2f0]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Image
+                        src="/sketch-logo.svg"
+                        alt="Sketch"
+                        width={24}
+                        height={24}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>
