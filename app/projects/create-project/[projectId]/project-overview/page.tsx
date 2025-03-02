@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { TopBar } from "@/app/components/TopBar";
 import { ProjectStages } from "@/app/components/ProjectStages";
 
@@ -26,6 +26,7 @@ const stages = [
 export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [hasCompensation, setHasCompensation] = useState<"yes" | "no">("no");
@@ -45,8 +46,12 @@ export default function Page() {
       projectDescription,
       hasCompensation,
     });
-    router.push("/projects/create-project/prototype");
-    // Here you would typically save the project data
+    
+    // Get the projectId from the URL params
+    const projectId = params.projectId as string;
+    
+    // Navigate to prototype page with project info
+    router.push(`/projects/create-project/${projectId}/prototype?name=${encodeURIComponent(projectName)}`);
   };
 
   return (
