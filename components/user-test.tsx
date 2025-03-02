@@ -21,8 +21,10 @@ interface StreamChunk {
 
 export function UserTest({
   onDataChange,
+  autoStart = false,
 }: {
   onDataChange?: (data: any, error: string | null) => void;
+  autoStart?: boolean;
 }) {
   const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
@@ -46,93 +48,129 @@ export function UserTest({
     historyRef.current = history;
   }, [history]);
 
+  // Control streaming based on autoStart prop
+  useEffect(() => {
+    if (autoStart && !isStreaming) {
+      startStreaming();
+    } else if (!autoStart && isStreaming) {
+      stopStreaming();
+    }
+  }, [autoStart]);
+
   const startStreaming = async () => {
     try {
       setError(null);
       setIsStreaming(true);
       setStreamData([]); // Reset stream data when starting new stream
 
-      // Check if realtime transcription is enabled
-      if (!settings?.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
+      // Check if settings are loaded
+      if (!settings) {
         const errorMsg =
-          "Realtime audio transcription is not enabled in settings. Go to account -> settings -> recording -> enable realtime audiotranscription -> models to use: screenpipe cloud. Then refresh.";
+          "Screenpipe settings not loaded yet. Please wait a moment and try again.";
         console.error(errorMsg);
         setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
         setIsStreaming(false);
         return;
       }
 
-      console.log("Settings check passed, audio transcription is enabled");
+      // Check if realtime transcription is enabled
+      if (!settings.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
+        const errorMsg =
+          "Realtime audio transcription is not enabled in settings. Go to account -> settings -> recording -> enable realtime audiotranscription -> models to use: screenpipe cloud. Then refresh.";
+        console.error(errorMsg);
+        setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
+        setIsStreaming(false);
+        return;
+      }
 
-      const originalConsoleError = console.error;
-      console.error = function (msg, ...args) {
-        if (
-          typeof msg === "string" &&
-          (msg.includes("failed to fetch settings") ||
-            msg.includes("ERR_CONNECTION_REFUSED"))
-        ) {
+      // Check microphone permissions
+      try {
+        console.log("Checking microphone permissions...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        stream.getTracks().forEach((track) => track.stop()); // Stop the test stream
+        console.log("Microphone permission granted");
+      } catch (error) {
+        const errorMsg =
+          "Microphone permission denied. Please allow microphone access and try again.";
+        console.error(errorMsg, error);
+        setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
+        setIsStreaming(false);
+        return;
+      }
+
+      console.log(
+        "Settings check passed, audio transcription is enabled",
+        settings.screenpipeAppSettings
+      );
+
+      // Start audio stream
+      try {
+        console.log("Attempting to start audio stream...");
+        console.log("Calling pipe.streamTranscriptions()...");
+
+        // Initialize audio stream with error handling
+        let audioStream;
+        try {
+          audioStream = await pipe.streamTranscriptions();
+        } catch (error) {
+          const errorMsg = `Failed to initialize audio stream: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`;
+          console.error(errorMsg);
+          setError(errorMsg);
+          if (onDataChange) {
+            onDataChange({ error: errorMsg }, errorMsg);
+          }
+          setIsStreaming(false);
           return;
         }
-        originalConsoleError.apply(console, [msg, ...args]);
-      };
 
-      // Start both streams
-      try {
-        console.log("Attempting to start vision stream...");
-        // Start vision streaming
-        const visionStream = pipe.streamVision(withOcr);
-        visionStreamRef.current = visionStream;
-        console.log("Vision stream initialized successfully");
+        if (!audioStream) {
+          const errorMsg = "Failed to initialize audio stream - stream is null";
+          console.error(errorMsg);
+          setError(errorMsg);
+          if (onDataChange) {
+            onDataChange({ error: errorMsg }, errorMsg);
+          }
+          setIsStreaming(false);
+          return;
+        }
 
-        console.log("Attempting to start audio stream...");
-        // Start audio streaming
-        const audioStream = await pipe.streamTranscriptions();
+        console.log("Audio stream object received:", audioStream);
         audioStreamRef.current = audioStream;
         console.log("Audio stream initialized successfully");
 
-        // Handle vision stream
-        (async () => {
-          try {
-            console.log("Starting vision stream loop");
-            for await (const event of visionStream) {
-              if (event.data && isValidVisionEvent(event.data)) {
-                console.log("Received valid vision event:", event.data);
-                setVisionEvent(event.data);
-
-                // Add vision data to stream collection
-                if (event.data.text) {
-                  setStreamData((prev) => [
-                    ...prev,
-                    {
-                      timestamp:
-                        event.data.timestamp || new Date().toISOString(),
-                      type: "vision",
-                      text: event.data.text,
-                    },
-                  ]);
-                }
-
-                if (onDataChange) onDataChange(event.data, null);
-              }
-            }
-          } catch (error) {
-            if (isStreaming) {
-              console.error("Vision stream failed:", error);
-              setError(
-                error instanceof Error
-                  ? `Vision stream error: ${error.message}`
-                  : "Vision stream failed"
-              );
-            }
-          }
-        })();
+        // Start vision streaming
+        console.log("Attempting to start vision stream...");
+        const visionStream = pipe.streamVision(withOcr);
+        visionStreamRef.current = visionStream;
+        console.log("Vision stream initialized successfully");
 
         // Handle audio stream
         (async () => {
           try {
             console.log("Starting audio stream loop");
+            console.log("Audio stream type:", typeof audioStream);
+            console.log(
+              "Audio stream properties:",
+              Object.getOwnPropertyNames(audioStream)
+            );
+
+            let eventCount = 0;
             for await (const event of audioStream) {
-              console.log("Received audio event:", event);
+              eventCount++;
+              console.log(`Received audio event ${eventCount}:`, event);
               if (event.choices?.[0]?.text) {
                 const chunk: TranscriptionChunk = {
                   transcription: event.choices[0].text,
@@ -176,17 +214,51 @@ export function UserTest({
             }
           }
         })();
+
+        // Handle vision stream
+        (async () => {
+          try {
+            console.log("Starting vision stream loop");
+            for await (const event of visionStream) {
+              if (event.data && isValidVisionEvent(event.data)) {
+                console.log("Received valid vision event:", event.data);
+                setVisionEvent(event.data);
+
+                // Add vision data to stream collection
+                if (event.data.text) {
+                  setStreamData((prev) => [
+                    ...prev,
+                    {
+                      timestamp:
+                        event.data.timestamp || new Date().toISOString(),
+                      type: "vision",
+                      text: event.data.text,
+                    },
+                  ]);
+                }
+
+                if (onDataChange) onDataChange(event.data, null);
+              }
+            }
+          } catch (error) {
+            if (isStreaming) {
+              console.error("Vision stream failed:", error);
+              setError(
+                error instanceof Error
+                  ? `Vision stream error: ${error.message}`
+                  : "Vision stream failed"
+              );
+            }
+          }
+        })();
       } catch (error) {
-        console.error("Failed to start streams:", error);
+        console.error("Stream initialization failed:", error);
         setError(
           error instanceof Error
-            ? `Failed to start streams: ${error.message}`
-            : "Failed to start streams"
+            ? `Failed to initialize streaming: ${error.message}`
+            : "Failed to initialize streaming"
         );
-        setIsStreaming(false);
       }
-
-      console.error = originalConsoleError;
     } catch (error) {
       console.error("Stream initialization failed:", error);
       setError(
@@ -194,7 +266,6 @@ export function UserTest({
           ? `Failed to initialize streaming: ${error.message}`
           : "Failed to initialize streaming"
       );
-      setIsStreaming(false);
     }
   };
 
