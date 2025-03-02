@@ -342,95 +342,50 @@ export function RealtimeScreen({
       }
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
+      console.log("AI Client:", aiClient); // Debug log
 
       if (!aiClient?.chat?.completions) {
         throw new Error("AI client not properly initialized");
       }
 
-      // Split data into chunks of approximately 4000 characters
-      const chunks = [];
-      const chunkSize = 4000;
-      let currentChunk = "";
-
-      // Split by newlines to keep events together
-      const lines = formattedData.split("\n");
-
-      for (const line of lines) {
-        if (currentChunk.length + line.length + 1 > chunkSize) {
-          chunks.push(currentChunk);
-          currentChunk = line + "\n";
-        } else {
-          currentChunk += line + "\n";
-        }
-      }
-      if (currentChunk) {
-        chunks.push(currentChunk);
-      }
-
-      // Process chunks sequentially and combine results
-      let combinedResponse = "";
-
-      for (let i = 0; i < chunks.length; i++) {
-        const isFirstChunk = i === 0;
-        const isLastChunk = i === chunks.length - 1;
-
-        const systemPrompt = isFirstChunk
-          ? "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision), transcribed audio, and click events. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections."
-          : "Continue analyzing the following portion of the session data, building upon previous analysis:";
-
-        const userPrompt = isFirstChunk
-          ? `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that the user did not like or did not understand, and also point out things that the user liked or appreciated (Part ${
-              i + 1
-            }/${chunks.length}):\n\n${chunks[i]}`
-          : `Continuing analysis (Part ${i + 1}/${chunks.length}):\n\n${
-              chunks[i]
-            }`;
-
-        try {
-          const completion = await aiClient.chat.completions.create({
+      try {
+        const completion = await aiClient.chat.completions
+          .create({
             model: "gpt-4",
             messages: [
               {
                 role: "system",
-                content: systemPrompt,
+                content:
+                  "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision), transcribed audio, and click events. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
               },
               {
                 role: "user",
-                content: userPrompt,
+                content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that the user did not like or did not understand, and also point out things that the user liked or appreciated:\n\n${formattedData}`,
               },
             ],
             temperature: 0.7,
-            max_tokens: 5000,
+            max_tokens: 500,
+          })
+          .catch((error) => {
+            console.error("OpenAI API Error:", error);
+            throw new Error(`OpenAI API Error: ${error.message}`);
           });
 
-          if (!completion?.choices?.[0]?.message?.content) {
-            throw new Error("Invalid response from GPT");
-          }
-
-          const response = completion.choices[0].message.content;
-
-          if (chunks.length > 1) {
-            combinedResponse += `\n\nPart ${i + 1}/${
-              chunks.length
-            }:\n${response}`;
-          } else {
-            combinedResponse = response;
-          }
-
-          // Update the UI with progress
-          setGptResponse(combinedResponse);
-        } catch (apiError) {
-          console.error(`API call failed for chunk ${i + 1}:`, apiError);
-          throw new Error(
-            `Failed to get response from GPT service for part ${i + 1}`
-          );
+        if (!completion?.choices?.[0]?.message?.content) {
+          throw new Error("Invalid response from GPT");
         }
-      }
 
-      // Final update with complete response
-      setGptResponse(combinedResponse);
+        setGptResponse(completion.choices[0].message.content);
+      } catch (apiError) {
+        console.error("API call failed:", apiError);
+        throw new Error(
+          `Failed to get response from GPT service: ${
+            apiError instanceof Error ? apiError.message : "Unknown error"
+          }`
+        );
+      }
     } catch (err) {
-      console.error("Error calling GPT:", err);
+      console.error("Error in sendToGPT:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process with GPT"
       );
@@ -548,7 +503,7 @@ export function RealtimeScreen({
       {visionEvent && renderVisionContent(visionEvent)}
 
       {/* Display transcription output */}
-      {transcription && (
+      {/* {transcription && (
         <div className="bg-slate-100 rounded p-2 overflow-auto h-[130px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-1">
             Live Transcription:
@@ -561,10 +516,10 @@ export function RealtimeScreen({
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {/* Display collected stream chunks */}
-      {streamData.length > 0 && (
+      {/* {streamData.length > 0 && (
         <div className="bg-slate-100 rounded p-2 overflow-auto max-h-[300px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-2">
             Collected Stream Data ({streamData.length} chunks):
@@ -600,7 +555,7 @@ export function RealtimeScreen({
               ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Display GPT Response */}
       {gptResponse && (
