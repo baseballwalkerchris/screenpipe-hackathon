@@ -6,7 +6,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { ProjectStages } from "@/components/ui/ProjectStages";
 import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { CreateTaskModal } from "@/components/create-task-modal";
-import { Plus } from "lucide-react";
+import { Plus, MoreVertical, Trash } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -26,6 +26,7 @@ export default function TasksPage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const [projectName, setProjectName] = useState("");
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     const nameFromUrl = searchParams.get("name");
@@ -63,6 +64,16 @@ export default function TasksPage() {
     setEditingTask(null);
   };
 
+  const handleDeleteTask = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    setTasks(tasks.filter((task) => task.id !== taskId));
+  };
+
+  const handleOptionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Handle options click - can be expanded later
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <TopBar projectName={projectName || "Project #1"} />
@@ -97,8 +108,10 @@ export default function TasksPage() {
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white border rounded-lg py-6 px-6 hover:shadow-md transition-shadow flex items-center gap-4 cursor-pointer"
+                  className="group bg-white border rounded-lg py-6 px-6 hover:shadow-md transition-all flex items-center gap-4 cursor-pointer hover:border-[#ff4d4f] relative"
                   onClick={() => handleEditTask(task)}
+                  onMouseEnter={() => setHoveredTaskId(task.id)}
+                  onMouseLeave={() => setHoveredTaskId(null)}
                 >
                   <Image
                     src="/checkbox.svg"
@@ -107,6 +120,26 @@ export default function TasksPage() {
                     height={48}
                   />
                   <h3 className="text-lg font-medium">{task.title}</h3>
+
+                  {/* Hover Controls */}
+                  {hoveredTaskId === task.id && (
+                    <div className="absolute right-2 top-2 bg-white shadow-[0_2px_4px_rgba(0,0,0,0.1)] rounded-md z-10">
+                      <button
+                        onClick={(e) => handleDeleteTask(e, task.id)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-md"
+                      >
+                        <Trash size={14} className="text-gray-500" />
+                        <span>Delete Task</span>
+                      </button>
+                      <button
+                        onClick={handleOptionsClick}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 last:rounded-b-md"
+                      >
+                        <MoreVertical size={14} className="text-gray-500" />
+                        <span>More Options</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
 
