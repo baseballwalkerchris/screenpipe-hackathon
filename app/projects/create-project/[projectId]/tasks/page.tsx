@@ -40,50 +40,45 @@ export default function TasksPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-2xl font-semibold">Tasks</h1>
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-[#ff4d4f] hover:bg-[#ff7875] text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Task
-              </Button>
             </div>
 
             {/* Task list */}
-            <div className="space-y-4">
-              {tasks.length === 0 ? (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="w-full border-2 border-[#ff4d4f] rounded-lg py-4 hover:bg-[#fff1f0] transition-colors"
+            <div className="space-y-4 max-w-3xl">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white border rounded-lg py-6 px-6 hover:shadow-md transition-shadow flex items-center gap-4"
                 >
-                  <div className="flex items-center justify-center text-[#ff4d4f] gap-2">
-                    <Plus size={20} />
-                    <span className="text-lg">New Task</span>
+                  <div className="w-12 h-12 rounded border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M20 6L9 17L4 12"
+                        stroke="#666666"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </div>
-                </button>
-              ) : (
-                tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <h3 className="text-lg font-medium mb-2">{task.title}</h3>
-                    {task.description && (
-                      <p className="text-gray-600 mb-2">{task.description}</p>
-                    )}
-                    {task.prototypeLink && (
-                      <a
-                        href={task.prototypeLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#ff4d4f] hover:underline text-sm"
-                      >
-                        View Prototype
-                      </a>
-                    )}
-                  </div>
-                ))
-              )}
+                  <h3 className="text-lg font-medium">{task.title}</h3>
+                </div>
+              ))}
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full border-2 border-[#ff4d4f] rounded-lg py-6 hover:bg-[#fff1f0] transition-colors"
+              >
+                <div className="flex items-center justify-center text-[#ff4d4f] gap-2">
+                  <Plus size={20} />
+                  <span className="text-lg">New Task</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
