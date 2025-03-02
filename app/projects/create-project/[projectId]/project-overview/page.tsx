@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { TopBar } from "@/app/components/TopBar";
-import { ProjectStages } from "@/app/components/ProjectStages";
-import { NavigationSidebar } from "@/app/components/NavigationSidebar";
+import { TopBar } from "@/components/ui/TopBar";
+import { ProjectStages } from "@/components/ui/ProjectStages";
+import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 
 export default function Page() {
   const router = useRouter();

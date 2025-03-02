@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import { TopBar } from "@/app/components/TopBar";
-import { ProjectStages } from "@/app/components/ProjectStages";
+import { TopBar } from "@/components/ui/TopBar";
+import { ProjectStages } from "@/components/ui/ProjectStages";
 import { FigmaEmbed } from "@/components/ui/figma-embed";
 
 export default function PrototypePage() {
@@ -18,7 +18,7 @@ export default function PrototypePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!figmaUrl.trim()) {
       setError("Please enter a Figma URL");
@@ -26,7 +26,7 @@ export default function PrototypePage() {
     }
 
     // Check if it's a valid Figma URL
-    if (!figmaUrl.includes('figma.com')) {
+    if (!figmaUrl.includes("figma.com")) {
       setError("Please enter a valid Figma URL");
       return;
     }
@@ -39,7 +39,9 @@ export default function PrototypePage() {
     if (figmaUrl) {
       const projectId = searchParams.get("projectId") || "";
       const projectName = searchParams.get("name") || "";
-      router.push(`/projects/create-project/${projectId}/tasks?name=${projectName}`);
+      router.push(
+        `/projects/create-project/${projectId}/tasks?name=${projectName}`
+      );
     }
   };
 
@@ -62,7 +64,8 @@ export default function PrototypePage() {
                 </h1>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Paste your Figma prototype link below. Make sure your prototype is set to public or anyone with the link can view.
+                Paste your Figma prototype link below. Make sure your prototype
+                is set to public or anyone with the link can view.
               </p>
             </div>
 
@@ -78,32 +81,27 @@ export default function PrototypePage() {
                       setError("");
                     }}
                     placeholder="Paste your Figma embed code or URL here..."
-                    className={`flex-1 ${error ? 'border-red-500' : ''}`}
+                    className={`flex-1 ${error ? "border-red-500" : ""}`}
                   />
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-[#ff4d4f] hover:bg-[#ff7875] text-white"
                   >
                     Embed
                   </Button>
                 </div>
-                {error && (
-                  <p className="text-red-500 text-sm mt-1">{error}</p>
-                )}
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                 <p className="text-sm text-gray-500 mt-2">
-                  Tip: To get the embed code, click "Share" in Figma, go to the "Embed" tab, and copy the URL from the iframe code.
+                  Tip: To get the embed code, click "Share" in Figma, go to the
+                  "Embed" tab, and copy the URL from the iframe code.
                 </p>
               </div>
             </form>
 
             {isEmbedVisible && figmaUrl && (
               <div className="space-y-6">
-                <FigmaEmbed 
-                  embedUrl={figmaUrl}
-                  width={800}
-                  height={450}
-                />
-                
+                <FigmaEmbed embedUrl={figmaUrl} width={800} height={450} />
+
                 <div className="flex justify-end">
                   <Button
                     onClick={handleNext}
@@ -118,7 +116,8 @@ export default function PrototypePage() {
             {!isEmbedVisible && (
               <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
                 <p className="text-gray-500">
-                  Your prototype will appear here after you paste a Figma URL and click Embed
+                  Your prototype will appear here after you paste a Figma URL
+                  and click Embed
                 </p>
               </div>
             )}
@@ -127,4 +126,4 @@ export default function PrototypePage() {
       </div>
     </div>
   );
-} 
+}
