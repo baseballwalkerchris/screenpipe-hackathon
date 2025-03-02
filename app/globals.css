@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-family: -apple-system, "SF Pro Display", "SF Pro", system-ui, sans-serif;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -14,6 +18,8 @@
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
+    --secondary-background: 0, 0%, 95%;
+    --secondary-background: 0, 0%, 95%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 240 4.8% 95.9%;
@@ -42,6 +48,8 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --button-orange: 12 98% 59%;
+    --font-primary: -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   .dark {
@@ -91,10 +99,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-primary);
   }
 }
-
-
 
 @layer base {
   * {

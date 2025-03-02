@@ -8,6 +8,7 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
   	container: {
@@ -19,14 +20,14 @@ const config: Config = {
   	},
   	extend: {
   		fontFamily: {
-  			sans: [
-  				'var(--font-geist-sans)'
-  			],
+  			sans: ['-apple-system', '"SF Pro Display"', '"SF Pro"', 'system-ui', 'sans-serif'],
   			mono: [
   				'var(--font-geist-mono)'
   			]
   		},
   		colors: {
+			"button-orange": "hsl(var(--button-orange))",
+			"secondary-background": "hsl(var(--secondary-background))",
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

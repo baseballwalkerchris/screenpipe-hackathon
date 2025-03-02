@@ -30,7 +30,7 @@ interface MouseTrackerProps {
   setStreamData?: React.Dispatch<React.SetStateAction<StreamChunk[]>>;
 }
 
-export function RealtimeScreen({
+export function UserTest({
   onDataChange,
 }: {
   onDataChange?: (data: any, error: string | null) => void;

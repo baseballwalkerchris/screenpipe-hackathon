@@ -3,7 +3,7 @@
 import { SettingsProvider } from "@/lib/settings-provider";
 import { ClientOnly } from "@/lib/client-only";
 import { Inter } from "next/font/google";
-import { RealtimeScreen } from "@/components/ready-to-use-examples/realtime-screen";
+import { UserTest } from "@/components/user-test";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,7 +16,7 @@ export default function Page() {
     <SettingsProvider>
       <ClientOnly>
         <div className={`h-full ${inter.className}`}>
-          <RealtimeScreen onDataChange={() => {}} />
+          <UserTest onDataChange={() => {}} />
         </div>
       </ClientOnly>
     </SettingsProvider>
