@@ -33,6 +33,7 @@ interface StreamChunk {
 
 export interface UserTestHandle {
   sendDataToGPT: (customPrompt?: string) => Promise<void>;
+  getLastGPTResponse: () => string | null;
 }
 
 export const UserTest = forwardRef<
@@ -474,6 +475,7 @@ export const UserTest = forwardRef<
 
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
+    getLastGPTResponse: () => gptResponse,
   }));
 
   return (

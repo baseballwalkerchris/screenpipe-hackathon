@@ -5,16 +5,24 @@ import { TopBar } from "@/components/ui/TopBar";
 import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { FigmaEmbed } from "@/components/ui/figma-embed";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Instructions } from "@/components/ui/Instructions";
 import { Button } from "@/components/ui/button";
 import { UserTest, UserTestHandle } from "@/components/user-test";
 
 export default function UserTestPage() {
+  const router = useRouter();
   const [taskStarted, setTaskStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [streamData, setStreamData] = useState<any[]>([]);
   const [currentInstructionIndex, setCurrentInstructionIndex] = useState(0);
+  const [allTaskData, setAllTaskData] = useState<
+    Array<{
+      taskTitle: string;
+      gptResponse: string | null;
+      streamData: any[];
+    }>
+  >([]);
   const userTestRef = useRef<UserTestHandle>(null);
   const params = useParams();
   const searchParams = useSearchParams();
@@ -58,23 +66,55 @@ export default function UserTestPage() {
       `Task "${currentInstruction.title}"`
     );
 
+    // Store this task's data
+    setAllTaskData((prev) => [
+      ...prev,
+      {
+        taskTitle: currentInstruction.title,
+        gptResponse: userTestRef.current?.getLastGPTResponse() || null,
+        streamData: streamData,
+      },
+    ]);
+
     // Show completion screen
     setTaskStarted(false);
     setIsCompleted(true);
     setStreamData([]); // Clear stream data for next task
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (currentInstructionIndex < instructionsList.length - 1) {
       // Move to next instruction but don't start it yet
       setCurrentInstructionIndex((prev) => prev + 1);
       setIsCompleted(false);
-      // Don't auto-start the task anymore
       setTaskStarted(false);
     } else {
-      // If this was the last instruction, reset everything
-      setIsCompleted(false);
-      setCurrentInstructionIndex(0);
+      // This is the last task, upload all data
+      try {
+        const response = await fetch("/api/upload-test-data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectId,
+            tasks: allTaskData,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload test data");
+        }
+
+        // Reset everything and redirect to completion page
+        setIsCompleted(false);
+        setCurrentInstructionIndex(0);
+        router.push(`/user/${projectId}/completion`);
+      } catch (error) {
+        console.error("Error uploading test data:", error);
+        // Handle error appropriately
+      }
     }
   };
 
