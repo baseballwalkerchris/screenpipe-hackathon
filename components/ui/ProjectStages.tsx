@@ -17,6 +17,7 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
     { id: 1, name: "Project Overview", isActive: currentStage === 1 },
     { id: 2, name: "Tasks", isActive: currentStage === 2 },
     { id: 3, name: "Share", isActive: currentStage === 3 },
+    { id: 4, name: "Results", isActive: currentStage === 4 },
   ];
 
   return (
@@ -56,6 +57,14 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
                 <Image
                   src="/share.svg"
                   alt="Share"
+                  width={26}
+                  height={26}
+                  className={""}
+                />
+              ) : stage.id === 4 ? (
+                <Image
+                  src="/sparkles.svg"
+                  alt="Results"
                   width={26}
                   height={26}
                   className={""}
