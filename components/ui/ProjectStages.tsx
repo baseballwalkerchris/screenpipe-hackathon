@@ -20,6 +20,7 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
   const projectId = params.projectId as string;
 
   const stages: Stage[] = [
+
     { 
       id: 1, 
       name: "Project Overview", 
@@ -44,6 +45,7 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
       isActive: currentStage === 4,
       path: `/projects/create-project/${projectId}/results`
     },
+
   ];
 
   const handleStageClick = (stage: Stage) => {
@@ -94,7 +96,9 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
                 />
               ) : stage.id === 4 ? (
                 <Image
-                  src="/results.svg"
+
+                  src="/sparkles.svg"
+
                   alt="Results"
                   width={26}
                   height={26}
