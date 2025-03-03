@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import Image from "next/image";
 import {
   pipe,
@@ -25,13 +31,17 @@ interface StreamChunk {
   };
 }
 
-export function UserTest({
-  onDataChange,
-  autoStart = false,
-}: {
-  onDataChange?: (data: any, error: string | null) => void;
-  autoStart?: boolean;
-}) {
+export interface UserTestHandle {
+  sendDataToGPT: (customPrompt?: string) => Promise<void>;
+}
+
+export const UserTest = forwardRef<
+  UserTestHandle,
+  {
+    onDataChange?: (data: any, error: string | null) => void;
+    autoStart?: boolean;
+  }
+>(({ onDataChange, autoStart = false }, ref) => {
   const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
@@ -116,16 +126,8 @@ export function UserTest({
         return;
       }
 
-      console.log(
-        "Settings check passed, audio transcription is enabled",
-        settings.screenpipeAppSettings
-      );
-
       // Start audio stream
       try {
-        console.log("Attempting to start audio stream...");
-        console.log("Calling pipe.streamTranscriptions()...");
-
         // Initialize audio stream with error handling
         let audioStream;
         try {
@@ -154,12 +156,10 @@ export function UserTest({
           return;
         }
 
-        console.log("Audio stream object received:", audioStream);
         audioStreamRef.current = audioStream;
         console.log("Audio stream initialized successfully");
 
         // Start vision streaming
-        console.log("Attempting to start vision stream...");
         const visionStream = pipe.streamVision(withOcr);
         visionStreamRef.current = visionStream;
         console.log("Vision stream initialized successfully");
@@ -415,6 +415,12 @@ export function UserTest({
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
 
+      console.log("AI Client:", aiClient); // Debug log
+
+      if (!aiClient?.chat?.completions) {
+        throw new Error("AI client not properly initialized");
+      }
+
       const completion = await aiClient.chat.completions.create({
         model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
         messages: [
@@ -430,7 +436,7 @@ export function UserTest({
           },
         ],
         temperature: 0.7,
-        max_tokens: 1500,
+        max_tokens: 200,
       });
 
       setGptResponse(completion.choices[0].message.content);
@@ -443,6 +449,43 @@ export function UserTest({
       setIsProcessingGPT(false);
     }
   };
+
+  const sendDataToGPT = async (customPrompt?: string) => {
+    if (streamData.length === 0) return;
+
+    const formattedData = streamData
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      )
+      .map(
+        (chunk) =>
+          `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+            chunk.type
+          }): ${chunk.text}`
+      )
+      .join("\n");
+
+    const prompt =
+      customPrompt ||
+      `
+Task completed! Here's the user test data:
+${formattedData}
+
+Please analyze:
+1. What actions did the user take?
+2. Were there any points of confusion or hesitation?
+3. What feedback or comments did they provide?
+4. How did they interact with the interface?
+5. What improvements could be made based on this interaction?
+`;
+
+    await sendToGPT(prompt);
+  };
+
+  useImperativeHandle(ref, () => ({
+    sendDataToGPT,
+  }));
 
   return (
     <div className="space-y-2">
@@ -627,4 +670,4 @@ export function UserTest({
       </div>
     </div>
   );
-}
+});

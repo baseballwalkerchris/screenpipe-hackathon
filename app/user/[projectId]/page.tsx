@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { TopBar } from "@/components/ui/TopBar";
 import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { FigmaEmbed } from "@/components/ui/figma-embed";
@@ -8,12 +8,13 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { useParams, useSearchParams } from "next/navigation";
 import { Instructions } from "@/components/ui/Instructions";
 import { Button } from "@/components/ui/button";
-import { UserTest } from "@/components/user-test";
+import { UserTest, UserTestHandle } from "@/components/user-test";
 
 export default function UserTestPage() {
   const [taskStarted, setTaskStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [streamData, setStreamData] = useState<any[]>([]);
+  const userTestRef = useRef<UserTestHandle>(null);
   const params = useParams();
   const searchParams = useSearchParams();
   const projectId = params.projectId as string;
@@ -28,7 +29,10 @@ export default function UserTestPage() {
     setStreamData([]);
   };
 
-  const handleTaskComplete = () => {
+  const handleTaskComplete = async () => {
+    // Send data to GPT for analysis
+    await userTestRef.current?.sendDataToGPT();
+
     setTaskStarted(false);
     setIsCompleted(true);
     setStreamData([]);
@@ -154,7 +158,11 @@ export default function UserTestPage() {
 
         {/* Hidden UserTest component to handle streaming */}
         <div className="hidden">
-          <UserTest onDataChange={handleDataChange} autoStart={taskStarted} />
+          <UserTest
+            ref={userTestRef}
+            onDataChange={handleDataChange}
+            autoStart={taskStarted}
+          />
         </div>
       </div>
     </div>
