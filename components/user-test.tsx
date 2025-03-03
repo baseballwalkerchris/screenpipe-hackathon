@@ -36,7 +36,12 @@ interface StreamChunk {
 export interface UserTestHandle {
   sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
   getLastGPTResponse: () => string | null;
-  generateFinalSummary: () => Promise<string | null>;
+  generateFinalSummary: () => Promise<{
+    whatWorkedWell: string;
+    commonPainPoints: string;
+    behavioralAnalysis: string;
+    recommendedNextSteps: string;
+  } | null>;
   getScreenDataVector: () => Promise<number[]>;
 }
 
@@ -540,7 +545,7 @@ export const UserTest = forwardRef<
           {
             role: "system",
             content:
-              "You are an AI assistant analyzing the complete user testing session. Provide a comprehensive analysis of the user's experience organized into four specific sections: 1) What Worked Well, 2) Common Pain Points, 3) Behavioral Analysis, and 4) Recommended Next Steps. Focus on actionable insights and clear patterns in user behavior.",
+              "You are an AI assistant analyzing the complete user testing session. Your task is to provide a structured analysis with exactly four sections. Format your response in a specific way, with each section clearly marked with a specific heading:\n\n1. WHAT_WORKED_WELL:\n[Your analysis of what worked well]\n\n2. COMMON_PAIN_POINTS:\n[Your analysis of pain points]\n\n3. BEHAVIORAL_ANALYSIS:\n[Your analysis of user behavior]\n\n4. RECOMMENDED_NEXT_STEPS:\n[Your recommendations]\n\nEnsure each section is clearly separated and marked with these exact headings.",
           },
           {
             role: "user",
@@ -552,13 +557,52 @@ export const UserTest = forwardRef<
       });
 
       const responseContent = completion.choices[0].message.content;
+      if (!responseContent) {
+        throw new Error("No response content received from GPT");
+      }
+
       console.log("=== Final Summary Generated ===");
-      console.log("Summary:", responseContent);
-      console.log("Summary length:", responseContent?.length);
-      console.log("=== End of Final Summary ===");
+      console.log("Raw summary:", responseContent);
+
+      // Parse the response into sections
+      const sections = {
+        whatWorkedWell: "",
+        commonPainPoints: "",
+        behavioralAnalysis: "",
+        recommendedNextSteps: "",
+      };
+
+      // Extract each section using regex
+      const whatWorkedWellMatch = responseContent.match(
+        /WHAT_WORKED_WELL:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const commonPainPointsMatch = responseContent.match(
+        /COMMON_PAIN_POINTS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const behavioralAnalysisMatch = responseContent.match(
+        /BEHAVIORAL_ANALYSIS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const recommendedNextStepsMatch = responseContent.match(
+        /RECOMMENDED_NEXT_STEPS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+
+      sections.whatWorkedWell = whatWorkedWellMatch
+        ? whatWorkedWellMatch[1].trim()
+        : "";
+      sections.commonPainPoints = commonPainPointsMatch
+        ? commonPainPointsMatch[1].trim()
+        : "";
+      sections.behavioralAnalysis = behavioralAnalysisMatch
+        ? behavioralAnalysisMatch[1].trim()
+        : "";
+      sections.recommendedNextSteps = recommendedNextStepsMatch
+        ? recommendedNextStepsMatch[1].trim()
+        : "";
+
+      console.log("Parsed sections:", sections);
 
       setGptResponse(responseContent);
-      return responseContent;
+      return sections;
     } catch (err) {
       console.error("Error generating final summary:", err);
       setError(

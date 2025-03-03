@@ -41,6 +41,9 @@ export default function UserTestPage() {
     {
       title: "Select a travel itinerary",
     },
+    {
+      title: "s a travel itinerary",
+    },
   ];
 
   const currentInstruction = instructionsList[currentInstructionIndex];
@@ -130,6 +133,10 @@ export default function UserTestPage() {
         const finalSummary = await userTestRef.current?.generateFinalSummary();
         console.log("Final summary generated:", finalSummary);
 
+        if (!finalSummary) {
+          throw new Error("Failed to generate final summary");
+        }
+
         // Get the screen data vector
         const screenDataVector =
           await userTestRef.current?.getScreenDataVector();
@@ -149,7 +156,10 @@ export default function UserTestPage() {
             projectId,
             screenDataVector,
             metadata: {
-              finalSummary,
+              whatWorkedWell: finalSummary.whatWorkedWell,
+              commonPainPoints: finalSummary.commonPainPoints,
+              behavioralAnalysis: finalSummary.behavioralAnalysis,
+              recommendedNextSteps: finalSummary.recommendedNextSteps,
               timestamp: new Date().toISOString(),
             },
           }),
