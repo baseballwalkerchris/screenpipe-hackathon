@@ -14,20 +14,6 @@ function prepareTextForEmbedding(text: string): string {
   return cleaned.slice(0, 8000);
 }
 
-// Helper function to batch array into chunks
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += chunkSize) {
-    chunks.push(array.slice(i, i + chunkSize));
-  }
-  return chunks;
-}
-
-// Helper function to truncate metadata strings
-function truncateMetadata(text: string | undefined, maxLength: number = 1000): string {
-  if (!text) return '';
-  return text.slice(0, maxLength);
-}
 
 export async function POST(req: Request) {
   try {
