@@ -5,6 +5,20 @@ const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY!
 });
 
+interface TestMetadata {
+  projectId: string;
+  taskTitle: string;
+  gptResponse: string;
+  timestamp: string;
+  taskIndex: number;
+  category?: string;
+  content?: string;
+  whatWorkedWell: string;
+  commonPainPoints: string;
+  behavioralAnalysis: string;
+  recommendedNextSteps: string;
+}
+
 export async function GET(req: Request) {
   console.log('Fetch test data API route called');
   
@@ -41,17 +55,21 @@ export async function GET(req: Request) {
         return NextResponse.json({ results: [] });
       }
 
-      // Extract and sort the results by timestamp and taskIndex, now including vectors
+      // Extract and sort the results, now including analysis metadata
       const results = queryResponse.matches
         .map(match => ({
-          ...match.metadata,
-          vector: match.values // Include the vector values in the results
+          ...(match.metadata as unknown as Partial<TestMetadata>),
+          vector: match.values,
+          whatWorkedWell: match.metadata?.whatWorkedWell || '',
+          commonPainPoints: match.metadata?.commonPainPoints || '',
+          behavioralAnalysis: match.metadata?.behavioralAnalysis || '',
+          recommendedNextSteps: match.metadata?.recommendedNextSteps || ''
         }))
-        .sort((a: any, b: any) => {
+        .sort((a, b) => {
           if (a.timestamp === b.timestamp) {
-            return a.taskIndex - b.taskIndex;
+            return (a.taskIndex ?? 0) - (b.taskIndex ?? 0);
           }
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+          return new Date(b.timestamp ?? '').getTime() - new Date(a.timestamp ?? '').getTime();
         });
 
       console.log('Processed results:', results);
