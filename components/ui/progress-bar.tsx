@@ -4,11 +4,13 @@ interface ProgressBarProps {
 
 export function ProgressBar({ progress }: ProgressBarProps) {
   return (
-    <div className="w-full h-1 bg-gray-200">
-      <div 
-        className="h-full bg-[#FF5A5F] transition-all duration-300 ease-in-out"
-        style={{ width: `${progress}%` }}
-      />
+    <div className="flex justify-center py-4">
+      <div className="w-[1400px] h-2.5 bg-gray-200 rounded-full">
+        <div 
+          className="h-full bg-[#FF5A5F] rounded-full transition-all duration-300 ease-in-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </div>
   );
 } 

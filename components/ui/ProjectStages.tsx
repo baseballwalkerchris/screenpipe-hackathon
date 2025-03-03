@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter, useParams } from "next/navigation";
 
 interface Stage {
   id: number;
   name: string;
   isActive: boolean;
+  path: string;
 }
 
 interface ProjectStagesProps {
@@ -13,12 +15,42 @@ interface ProjectStagesProps {
 }
 
 export function ProjectStages({ currentStage }: ProjectStagesProps) {
+  const router = useRouter();
+  const params = useParams();
+  const projectId = params.projectId as string;
+
   const stages: Stage[] = [
-    { id: 1, name: "Project Overview", isActive: currentStage === 1 },
-    { id: 2, name: "Tasks", isActive: currentStage === 2 },
-    { id: 3, name: "Share", isActive: currentStage === 3 },
-    { id: 4, name: "Results", isActive: currentStage === 4 },
+
+    { 
+      id: 1, 
+      name: "Project Overview", 
+      isActive: currentStage === 1,
+      path: `/projects/create-project/${projectId}/project-overview`
+    },
+    { 
+      id: 2, 
+      name: "Tasks", 
+      isActive: currentStage === 2,
+      path: `/projects/create-project/${projectId}/tasks`
+    },
+    { 
+      id: 3, 
+      name: "Share", 
+      isActive: currentStage === 3,
+      path: `/projects/create-project/${projectId}/share`
+    },
+    { 
+      id: 4, 
+      name: "Results", 
+      isActive: currentStage === 4,
+      path: `/projects/create-project/${projectId}/results`
+    },
+
   ];
+
+  const handleStageClick = (stage: Stage) => {
+    router.push(stage.path);
+  };
 
   return (
     <div className="w-64 bg-white border-r border-gray-200">
@@ -26,7 +58,8 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
         {stages.map((stage) => (
           <div
             key={stage.id}
-            className={`flex items-center p-3 rounded-lg mb-2 ${
+            onClick={() => handleStageClick(stage)}
+            className={`flex items-center p-3 rounded-lg mb-2 cursor-pointer ${
               stage.isActive
                 ? "bg-[#fff2f0] text-[#ff4d4f]"
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
@@ -63,7 +96,9 @@ export function ProjectStages({ currentStage }: ProjectStagesProps) {
                 />
               ) : stage.id === 4 ? (
                 <Image
+
                   src="/sparkles.svg"
+
                   alt="Results"
                   width={26}
                   height={26}
