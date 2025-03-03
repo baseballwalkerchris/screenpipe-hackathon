@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
 import OpenAI from 'openai';
-import { pipe } from "@screenpipe/js";
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY!
 });
+
+// Helper function to clean and truncate text
+function prepareTextForEmbedding(text: string): string {
+  // Remove extra whitespace and normalize
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  // Truncate to approximately 8000 characters (safe limit for embedding)
+  return cleaned.slice(0, 8000);
+}
 
 export async function POST(req: Request) {
   try {
@@ -31,15 +38,6 @@ export async function POST(req: Request) {
       });
       console.log('OpenAI client created');
 
-      // Test the OpenAI client with a simple embedding
-      console.log('Testing OpenAI client with a simple embedding...');
-      const testEmbedding = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: "test",
-        encoding_format: "float"
-      });
-      console.log('Test embedding successful, dimension:', testEmbedding.data[0].embedding.length);
-
       // Initialize Pinecone
       if (!process.env.PINECONE_INDEX) {
         throw new Error('PINECONE_INDEX environment variable is not set');
@@ -51,29 +49,35 @@ export async function POST(req: Request) {
       // Process each task
       console.log(`Processing ${tasks.length} tasks for project ${projectId}`);
       const vectors = await Promise.all(tasks.map(async (task: any, i: number) => {
+        let taskText: string = '';
         try {
-          const taskText = `
-            Task: ${task.taskTitle}
-            GPT Analysis: ${task.gptResponse}
-            User Actions: ${JSON.stringify(task.streamData)}
-          `;
+          // Clean and prepare the task data
+          const cleanedGptResponse = task.gptResponse ? task.gptResponse.toString() : '';
+          const cleanedStreamData = task.streamData ? JSON.stringify(task.streamData) : '';
+          
+          taskText = prepareTextForEmbedding(`
+            Task: ${task.taskTitle || ''}
+            GPT Analysis: ${cleanedGptResponse}
+            User Actions: ${cleanedStreamData}
+          `);
+
+          console.log(`Task ${i + 1} text length: ${taskText.length} characters`);
 
           // Generate embedding using OpenAI directly
           const embeddingResponse = await openai.embeddings.create({
             model: "text-embedding-ada-002",
-            input: taskText,
-            encoding_format: "float"
+            input: taskText
           });
           
-          console.log(`Generated embedding for task ${i + 1}/${tasks.length}`);
+          console.log(`Generated embedding for task ${i + 1}/${tasks.length} (dimension: ${embeddingResponse.data[0].embedding.length})`);
 
           return {
             id: `${projectId}-task-${i}-${timestamp}`,
             values: embeddingResponse.data[0].embedding,
             metadata: {
               projectId,
-              taskTitle: task.taskTitle,
-              gptResponse: task.gptResponse,
+              taskTitle: task.taskTitle || '',
+              gptResponse: cleanedGptResponse,
               streamData: task.streamData,
               timestamp,
               taskIndex: i
@@ -84,6 +88,7 @@ export async function POST(req: Request) {
             error: taskError,
             task: {
               title: task.taskTitle,
+              textLength: taskText?.length,
               hasGptResponse: !!task.gptResponse,
               hasStreamData: !!task.streamData
             }
