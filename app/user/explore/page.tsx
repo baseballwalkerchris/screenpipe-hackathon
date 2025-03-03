@@ -10,46 +10,52 @@ import { useState } from "react";
 const SAMPLE_APPS = [
   {
     id: "app1",
-    title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    title: "Wanderly",
+    embedUrl:
+      "https://www.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&t=KiX1Pz3bry2fjuz2-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&show-proto-sidebar=1",
     expectedTime: "15 mins",
-    compensation: "20"
+    compensation: "20",
   },
   {
     id: "app2",
     title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    embedUrl:
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20"
+    compensation: "20",
   },
   {
     id: "app3",
     title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    embedUrl:
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20"
+    compensation: "20",
   },
   {
     id: "app4",
     title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    embedUrl:
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20"
+    compensation: "20",
   },
   {
     id: "app5",
     title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    embedUrl:
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20"
+    compensation: "20",
   },
   {
     id: "app6",
     title: "Productivity App",
-    embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
+    embedUrl:
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20"
-  }
+    compensation: "20",
+  },
 ];
 
 export default function ExplorePage() {
@@ -58,10 +64,10 @@ export default function ExplorePage() {
   return (
     <div className="flex h-screen overflow-hidden bg-secondary-background">
       <Sidebar activePage="explore" />
-      
+
       <div className="flex-1 flex flex-col h-screen overflow-auto">
         <Header />
-        
+
         <div className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-2xl font-semibold mb-8">
