@@ -1,43 +1,47 @@
 "use client";
 
-import { SearchIcon, GridIcon } from "../icons";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Search, LayoutGrid } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const Sidebar = () => {
-  const pathname = usePathname();
+interface SidebarProps {
+  activePage?: 'explore' | 'projects';
+}
 
+export default function Sidebar({ activePage }: SidebarProps) {
   return (
-    <aside className="w-48 min-w-[12rem] h-screen bg-background text-sidebar-foreground p-4 border-r flex flex-col items-center">
-      <div className="font-bold text-lg mb-6 text-center w-full">LOGO HERE</div>
-      <nav className="w-full">
-        <ul className="space-y-2">
-          <li>
-            <Link 
-              href="/" 
-              className={`flex items-center gap-2 p-2 rounded-md justify-center w-full ${
-                pathname === "/" ? "bg-sidebar-accent" : "hover:bg-sidebar-accent"
-              }`}
-            >
-              <SearchIcon className="w-5 h-5" />
-              Explore
-            </Link>
-          </li>
-          <li>
-            <Link 
-              href="/projects" 
-              className={`flex items-center gap-2 p-2 rounded-md justify-center w-full ${
-                pathname === "/projects" ? "bg-sidebar-accent" : "hover:bg-sidebar-accent"
-              }`}
-            >
-              <GridIcon className="w-5 h-5" />
-              Projects
-            </Link>
-          </li>
-        </ul>
-      </nav>
-    </aside>
-  );
-};
+    <div className="w-[240px] border-r border-border bg-white flex flex-col">
+      <div className="p-8">
+        <div className="font-semibold text-lg">LOGO HERE</div>
+      </div>
 
-export default Sidebar;
+      <div className="flex-1 px-4 space-y-4">
+        <Link 
+          href="/user/explore"
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+            activePage === 'explore' 
+              ? "bg-[#FFF3F3] text-[#FF5A5F]" 
+              : "text-gray-600 hover:bg-gray-100"
+          )}
+        >
+          <Search size={20} />
+          Explore
+        </Link>
+
+        <Link 
+          href="/projects"
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+            activePage === 'projects' 
+              ? "bg-[#FFF3F3] text-[#FF5A5F]" 
+              : "text-gray-600 hover:bg-gray-100"
+          )}
+        >
+          <LayoutGrid size={20} />
+          Projects
+        </Link>
+      </div>
+    </div>
+  );
+} 
