@@ -39,13 +39,16 @@ export default function UserTestPage() {
   // Define multiple instructions
   const instructionsList = [
     {
-      title: "Select a travel itinerary",
+      title: "Choose a travel itinerary and save it to your profile",
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&embed-host=share&hide-ui=1&show-proto-sidebar=0"
     },
     {
-      title: "Save a travel itinerary",
+      title: "Indicate your mood and update the itinerary accordingly",
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&show-proto-sidebar=0&embed-host=share&hide-ui=1"
     },
     {
-      title: "Finish a travel itinerary",
+      title: "Choose a mindfulness exercise and start engaging with it",
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&embed-host=share&hide-ui=1&show-proto-sidebar=0"
     },
   ];
 
@@ -189,7 +192,10 @@ export default function UserTestPage() {
   };
 
   const handleBackButton = () => {
-    if (showFinalCompletion) {
+    if (showLandingScreen) {
+      // From landing page, go back to explore page
+      router.push("/user/explore");
+    } else if (showFinalCompletion) {
       // From final completion, go back to last task completion
       setShowFinalCompletion(false);
       setIsCompleted(true);
@@ -215,11 +221,13 @@ export default function UserTestPage() {
       <NavigationSidebar />
 
       <div className="flex-1 flex flex-col h-screen">
-        <TopBar
-          projectName={projectId}
-          showBackButton
-          onBackClick={handleBackButton}
-        />
+        <div className="h-20">
+          <TopBar
+            projectName={projectId}
+            showBackButton
+            onBackClick={handleBackButton}
+          />
+        </div>
         {!showLandingScreen && !showFinalCompletion && (
           <ProgressBar
             progress={
@@ -231,7 +239,7 @@ export default function UserTestPage() {
           />
         )}
 
-        <div className="flex-1 h-[calc(100vh-4rem)]">
+        <div className="flex-1">
           {showFinalCompletion ? (
             // Final completion screen
             <div className="flex-1 p-8 flex items-center justify-center">
@@ -327,7 +335,7 @@ export default function UserTestPage() {
               <div className="w-[600px]">
                 <div className="w-full h-full bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={embedUrl} width="375" height="812" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="375" height="812" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -352,7 +360,7 @@ export default function UserTestPage() {
                 {/* Centered Figma embed */}
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="transform scale-[0.95]">
-                    <FigmaEmbed embedUrl={embedUrl} width="375" height="652" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="375" height="652" />
                   </div>
                 </div>
 
@@ -408,7 +416,7 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={embedUrl} width="450" height="900" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="450" height="900" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -439,7 +447,7 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={embedUrl} width="450" height="900" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="450" height="900" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>

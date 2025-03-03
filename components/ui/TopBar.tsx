@@ -21,7 +21,7 @@ export function TopBar({ projectName, showBackButton, onBackClick }: TopBarProps
   };
 
   return (
-    <div className="h-16 border-b flex items-center px-6 bg-white">
+    <div className="h-full border-b flex items-center px-8 bg-white">
       {showBackButton && (
         <BackButton onClick={handleBack} />
       )}

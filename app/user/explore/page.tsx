@@ -9,8 +9,8 @@ import { useState } from "react";
 // Sample data - in a real app, this would come from an API
 const SAMPLE_APPS = [
   {
-    id: "app1",
-    title: "Productivity App",
+    id: "Wanderly",
+    title: "Wanderly",
     embedUrl: "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
     compensation: "20"
