@@ -130,9 +130,13 @@ export default function UserTestPage() {
         const finalSummary = await userTestRef.current?.generateFinalSummary();
         console.log("Final summary generated:", finalSummary);
 
+        // Get the screen data vector
+        const screenDataVector =
+          await userTestRef.current?.getScreenDataVector();
+        console.log("Screen data vector generated");
+
         console.log("Uploading test data:", {
           projectId,
-          taskCount: allTaskData.length,
           timestamp: new Date().toISOString(),
         });
 
@@ -143,9 +147,11 @@ export default function UserTestPage() {
           },
           body: JSON.stringify({
             projectId,
-            tasks: allTaskData,
-            timestamp: new Date().toISOString(),
-            finalSummary: finalSummary,
+            screenDataVector,
+            metadata: {
+              finalSummary,
+              timestamp: new Date().toISOString(),
+            },
           }),
         });
 

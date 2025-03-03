@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { usePipeSettings } from "@/lib/hooks/use-pipe-settings";
 import { createAiClient } from "@/app/api/settings/route";
+import openai from "openai";
+import OpenAI from "openai";
 
 interface StreamChunk {
   timestamp: string;
@@ -35,6 +37,7 @@ export interface UserTestHandle {
   sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
   getLastGPTResponse: () => string | null;
   generateFinalSummary: () => Promise<string | null>;
+  getScreenDataVector: () => Promise<number[]>;
 }
 
 export const UserTest = forwardRef<
@@ -567,6 +570,51 @@ export const UserTest = forwardRef<
     }
   };
 
+  const getScreenDataVector = async () => {
+    try {
+      console.log("=== Generating Screen Data Vector ===");
+
+      // Format all screen data into a single text
+      const formattedData = streamData
+        .sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map(
+          (chunk) =>
+            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+              chunk.type
+            }): ${chunk.text}`
+        )
+        .join("\n");
+
+      console.log("Generating embedding for screen data...");
+
+      const response = await fetch("/api/generate-embedding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: formattedData }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate embedding");
+      }
+
+      const data = await response.json();
+      const vector = data.embedding;
+
+      console.log("Vector generated, length:", vector.length);
+      console.log("=== Screen Data Vector Generation Complete ===");
+
+      return vector;
+    } catch (err) {
+      console.error("Error generating screen data vector:", err);
+      throw err;
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
     getLastGPTResponse: () => {
@@ -574,6 +622,7 @@ export const UserTest = forwardRef<
       return gptResponse;
     },
     generateFinalSummary,
+    getScreenDataVector,
   }));
 
   return (
