@@ -27,6 +27,7 @@ export default function UserTestPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const projectId = params.projectId as string;
+  const [error, setError] = useState<string | null>(null);
 
   // Get embed URL from URL parameters
   const embedUrl =
@@ -91,6 +92,12 @@ export default function UserTestPage() {
     } else {
       // This is the last task, upload all data
       try {
+        console.log("Uploading test data:", {
+          projectId,
+          taskCount: allTaskData.length,
+          timestamp: new Date().toISOString(),
+        });
+
         const response = await fetch("/api/upload-test-data", {
           method: "POST",
           headers: {
@@ -103,17 +110,37 @@ export default function UserTestPage() {
           }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error("Failed to upload test data");
+          console.error("Failed to upload test data:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: data.error,
+            details: data.details,
+          });
+          throw new Error(
+            `Failed to upload test data: ${data.error}${
+              data.details ? ` - ${data.details}` : ""
+            }`
+          );
         }
+
+        console.log("Successfully uploaded test data:", data);
 
         // Reset everything and redirect to completion page
         setIsCompleted(false);
         setCurrentInstructionIndex(0);
         router.push(`/user/${projectId}/completion`);
       } catch (error) {
-        console.error("Error uploading test data:", error);
-        // Handle error appropriately
+        console.error("Error in handleContinue:", {
+          error,
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
+        // You might want to show this error to the user
+        setError(
+          error instanceof Error ? error.message : "Failed to upload test data"
+        );
       }
     }
   };
