@@ -42,10 +42,7 @@ export default function UserTestPage() {
       title: "Select a travel itinerary",
     },
     {
-      title: "Save a travel itinerary",
-    },
-    {
-      title: "Finish a travel itinerary",
+      title: "s a travel itinerary",
     },
   ];
 
@@ -129,11 +126,24 @@ export default function UserTestPage() {
       setIsCompleted(false);
       setTaskStarted(false);
     } else {
-      // This is the last task, upload all data
+      // This is the last task, generate final summary and upload all data
       try {
+        // Generate final summary
+        console.log("Generating final summary for all tasks...");
+        const finalSummary = await userTestRef.current?.generateFinalSummary();
+        console.log("Final summary generated:", finalSummary);
+
+        if (!finalSummary) {
+          throw new Error("Failed to generate final summary");
+        }
+
+        // Get the screen data vector
+        const screenDataVector =
+          await userTestRef.current?.getScreenDataVector();
+        console.log("Screen data vector generated");
+
         console.log("Uploading test data:", {
           projectId,
-          taskCount: allTaskData.length,
           timestamp: new Date().toISOString(),
         });
 
@@ -144,8 +154,14 @@ export default function UserTestPage() {
           },
           body: JSON.stringify({
             projectId,
-            tasks: allTaskData,
-            timestamp: new Date().toISOString(),
+            screenDataVector,
+            metadata: {
+              whatWorkedWell: finalSummary.whatWorkedWell,
+              commonPainPoints: finalSummary.commonPainPoints,
+              behavioralAnalysis: finalSummary.behavioralAnalysis,
+              recommendedNextSteps: finalSummary.recommendedNextSteps,
+              timestamp: new Date().toISOString(),
+            },
           }),
         });
 
@@ -214,7 +230,7 @@ export default function UserTestPage() {
     <div className="flex h-screen overflow-hidden bg-white">
       <NavigationSidebar />
 
-      <div className="flex-1 flex flex-col h-screen">
+      <div className="flex-1 flex flex-col">
         <TopBar
           projectName={projectId}
           showBackButton
@@ -231,7 +247,7 @@ export default function UserTestPage() {
           />
         )}
 
-        <div className="flex-1 h-[calc(100vh-4rem)]">
+        <div className="flex-1 overflow-auto">
           {showFinalCompletion ? (
             // Final completion screen
             <div className="flex-1 p-8 flex items-center justify-center">

@@ -9,7 +9,11 @@ interface TopBarProps {
   onBackClick?: () => void;
 }
 
-export function TopBar({ projectName, showBackButton, onBackClick }: TopBarProps) {
+export function TopBar({
+  projectName,
+  showBackButton,
+  onBackClick,
+}: TopBarProps) {
   const router = useRouter();
 
   const handleBack = () => {
@@ -21,10 +25,8 @@ export function TopBar({ projectName, showBackButton, onBackClick }: TopBarProps
   };
 
   return (
-    <div className="h-16 border-b flex items-center px-6 bg-white">
-      {showBackButton && (
-        <BackButton onClick={handleBack} />
-      )}
+    <div className="h-16 border-b flex items-center px-8 bg-white">
+      {showBackButton && <BackButton onClick={handleBack} />}
       <h1 className="text-lg font-semibold">{projectName}</h1>
     </div>
   );
