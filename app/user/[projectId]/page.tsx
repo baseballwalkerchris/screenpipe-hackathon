@@ -385,6 +385,8 @@ export default function UserTestPage() {
                     <FigmaEmbed embedUrl={embedUrl} width="375" height="652" />
                   </div>
                 </div>
+
+                {/* Screenpipe stream data display */}
               </div>
             </div>
           ) : isCompleted ? (
