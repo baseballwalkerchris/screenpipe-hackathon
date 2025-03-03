@@ -70,47 +70,49 @@ export default function UserTestPage() {
   };
 
   const handleTaskComplete = async () => {
+    // Show completion screen immediately
+    setTaskStarted(false);
+    setIsCompleted(true);
+
     try {
-      // Send current instruction's data to GPT
+      // Process GPT response in background
       console.log("Before sending to GPT");
 
-      // Try to get the ref first
       if (!userTestRef.current) {
         console.error("UserTest ref is not available");
         return;
       }
 
-      // Send data to GPT and wait for it to complete
-      await userTestRef.current.sendDataToGPT(
-        `Task "${currentInstruction.title}"`
-      );
+      // Send data to GPT in background
+      userTestRef.current
+        .sendDataToGPT(`Task "${currentInstruction.title}"`)
+        .then(async () => {
+          // Add a small delay to ensure state updates have propagated
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Add a small delay to ensure state updates have propagated
-      await new Promise((resolve) => setTimeout(resolve, 100));
+          // Get the response and ensure it's properly typed
+          const gptResponse = userTestRef.current?.getLastGPTResponse() ?? null;
+          console.log("GPT Response:", {
+            hasRef: true,
+            rawResponse: gptResponse,
+            responseType: typeof gptResponse,
+            streamDataLength: streamData.length,
+          });
 
-      // Get the response
-      const gptResponse = userTestRef.current.getLastGPTResponse();
-      console.log("GPT Response:", {
-        hasRef: true,
-        rawResponse: gptResponse,
-        responseType: typeof gptResponse,
-        streamDataLength: streamData.length,
-      });
+          // Store this task's data
+          const taskData = {
+            taskTitle: currentInstruction.title,
+            gptResponse: gptResponse,
+            streamData: streamData,
+          };
+          console.log("Storing task data:", taskData);
 
-      // Store this task's data
-      const taskData = {
-        taskTitle: currentInstruction.title,
-        gptResponse: gptResponse,
-        streamData: streamData,
-      };
-      console.log("Storing task data:", taskData);
-
-      setAllTaskData((prev) => [...prev, taskData]);
-
-      // Show completion screen
-      setTaskStarted(false);
-      setIsCompleted(true);
-      setStreamData([]); // Clear stream data for next task
+          setAllTaskData((prev) => [...prev, taskData]);
+          setStreamData([]); // Clear stream data for next task
+        })
+        .catch((error) => {
+          console.error("Error in background GPT processing:", error);
+        });
     } catch (error) {
       console.error("Error in handleTaskComplete:", error);
       setError(
@@ -121,12 +123,12 @@ export default function UserTestPage() {
 
   const handleContinue = async () => {
     if (currentInstructionIndex < instructionsList.length - 1) {
-      // Move to next instruction but don't start it yet
+      // For intermediate tasks, move to next instruction immediately
       setCurrentInstructionIndex((prev) => prev + 1);
       setIsCompleted(false);
       setTaskStarted(false);
     } else {
-      // This is the last task, generate final summary and upload all data
+      // For final task, wait for GPT summary and data upload
       try {
         // Generate final summary
         console.log("Generating final summary for all tasks...");
@@ -165,34 +167,23 @@ export default function UserTestPage() {
           }),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-          console.error("Failed to upload test data:", {
-            status: response.status,
-            statusText: response.statusText,
-            error: data.error,
-            details: data.details,
-          });
-          throw new Error(
-            `Failed to upload test data: ${data.error}${
-              data.details ? ` - ${data.details}` : ""
-            }`
-          );
+          const data = await response.json();
+          throw new Error(`Failed to upload test data: ${data.error}`);
         }
 
-        console.log("Successfully uploaded test data:", data);
-
-        // Show the final completion screen
+        console.log("Successfully uploaded test data");
+        // Only show completion screen after successful upload
         setShowFinalCompletion(true);
       } catch (error) {
-        console.error("Error in handleContinue:", {
+        console.error("Error in final task processing:", {
           error,
           message: error instanceof Error ? error.message : "Unknown error",
         });
-        // You might want to show this error to the user
         setError(
-          error instanceof Error ? error.message : "Failed to upload test data"
+          error instanceof Error
+            ? error.message
+            : "Failed to process final task"
         );
       }
     }
