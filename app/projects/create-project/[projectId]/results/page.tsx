@@ -19,6 +19,10 @@ interface TestResult {
   timestamp: string;
   taskIndex: number;
   vector?: number[];
+  whatWorkedWell?: string[];
+  commonPainPoints?: string[];
+  behavioralAnalysis?: string[];
+  recommendedNextSteps?: string[];
 }
 
 export default function ResultsPage() {
@@ -34,6 +38,13 @@ export default function ResultsPage() {
     commonPainPoints: false,
     behavioralAnalysis: false,
     recommendedNextSteps: false,
+  });
+
+  const [analysis, setAnalysis] = useState({
+    whatWorkedWell: [],
+    commonPainPoints: [],
+    behavioralAnalysis: [],
+    recommendedNextSteps: [],
   });
 
   useEffect(() => {
@@ -65,8 +76,54 @@ export default function ResultsPage() {
       }
     };
 
+    const fetchAnalysis = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `/api/fetch-test-data?projectId=${projectId}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch analysis");
+        }
+
+        // Extract analysis from results
+        const analysisData = data.results.reduce(
+          (acc: any, result: TestResult) => {
+            if (result.whatWorkedWell)
+              acc.whatWorkedWell.push(result.whatWorkedWell);
+            if (result.commonPainPoints)
+              acc.commonPainPoints.push(result.commonPainPoints);
+            if (result.behavioralAnalysis)
+              acc.behavioralAnalysis.push(result.behavioralAnalysis);
+            if (result.recommendedNextSteps)
+              acc.recommendedNextSteps.push(result.recommendedNextSteps);
+            return acc;
+          },
+          {
+            whatWorkedWell: [],
+            commonPainPoints: [],
+            behavioralAnalysis: [],
+            recommendedNextSteps: [],
+          }
+        );
+
+        setAnalysis(analysisData);
+        console.log("Fetched and processed analysis:", analysisData); // Debug log
+      } catch (err) {
+        console.error("Analysis fetch error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch analysis"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchTestData();
-  }, []);
+    fetchAnalysis();
+  }, [projectId]);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -76,7 +133,6 @@ export default function ResultsPage() {
   };
 
   const analyzeResults = (results: TestResult[]) => {
-    // Group tasks by title to analyze success rates
     const taskAnalysis = results.reduce((acc: any, result) => {
       const { taskTitle, gptResponse } = result;
       if (!acc[taskTitle]) {
@@ -88,11 +144,10 @@ export default function ResultsPage() {
       }
 
       acc[taskTitle].total += 1;
-      // Assuming a positive GPT response indicates success
-      if (gptResponse.toLowerCase().includes("success")) {
+      if (gptResponse && gptResponse.toLowerCase().includes("success")) {
         acc[taskTitle].successful += 1;
       }
-      acc[taskTitle].responses.push(gptResponse);
+      acc[taskTitle].responses.push(gptResponse || "");
 
       return acc;
     }, {});
@@ -152,6 +207,13 @@ export default function ResultsPage() {
                               gptResponse: result.gptResponse,
                               timestamp: result.timestamp,
                               taskIndex: result.taskIndex,
+                              metadata: {
+                                whatWorkedWell: result.whatWorkedWell,
+                                commonPainPoints: result.commonPainPoints,
+                                behavioralAnalysis: result.behavioralAnalysis,
+                                recommendedNextSteps:
+                                  result.recommendedNextSteps,
+                              },
                             },
                             null,
                             2
@@ -244,28 +306,17 @@ export default function ResultsPage() {
 
                       {expandedSections.whatWorkedWell && (
                         <div className="p-4 space-y-3">
-                          {Object.entries(taskAnalysis).map(
-                            ([task, analysis]: [string, any]) => {
-                              const successRate =
-                                (analysis.successful / analysis.total) * 100;
-                              if (successRate >= 70) {
-                                return (
-                                  <div key={task}>
-                                    <h4 className="font-medium text-red-400">
-                                      {task} ({successRate.toFixed(0)}% Success
-                                      Rate)
-                                    </h4>
-                                    <p className="text-sm text-gray-600 ml-4">
-                                      - {analysis.successful} out of{" "}
-                                      {analysis.total} users completed this task
-                                      successfully.
-                                    </p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }
-                          )}
+                          {analysis.whatWorkedWell &&
+                            analysis.whatWorkedWell.map((item, index) => (
+                              <div key={index}>
+                                <h4 className="font-medium text-red-400">
+                                  Success Point {index + 1}
+                                </h4>
+                                <p className="text-sm text-gray-600 ml-4">
+                                  - {item}
+                                </p>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -290,28 +341,17 @@ export default function ResultsPage() {
                       </button>
                       {expandedSections.commonPainPoints && (
                         <div className="p-4 space-y-3">
-                          {Object.entries(taskAnalysis).map(
-                            ([task, analysis]: [string, any]) => {
-                              const successRate =
-                                (analysis.successful / analysis.total) * 100;
-                              if (successRate < 70) {
-                                return (
-                                  <div key={task}>
-                                    <h4 className="font-medium text-orange-500">
-                                      {task} ({successRate.toFixed(0)}% Success
-                                      Rate)
-                                    </h4>
-                                    <p className="text-sm text-gray-600 ml-4">
-                                      - Only {analysis.successful} out of{" "}
-                                      {analysis.total} users completed this task
-                                      successfully.
-                                    </p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }
-                          )}
+                          {analysis.commonPainPoints &&
+                            analysis.commonPainPoints.map((item, index) => (
+                              <div key={index}>
+                                <h4 className="font-medium text-orange-500">
+                                  Pain Point {index + 1}
+                                </h4>
+                                <p className="text-sm text-gray-600 ml-4">
+                                  - {item}
+                                </p>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -335,8 +375,18 @@ export default function ResultsPage() {
                         )}
                       </button>
                       {expandedSections.behavioralAnalysis && (
-                        <div className="p-4">
-                          {/* Add behavioral analysis content here */}
+                        <div className="p-4 space-y-3">
+                          {analysis.behavioralAnalysis &&
+                            analysis.behavioralAnalysis.map((item, index) => (
+                              <div key={index}>
+                                <h4 className="font-medium text-blue-500">
+                                  Behavioral Insight {index + 1}
+                                </h4>
+                                <p className="text-sm text-gray-600 ml-4">
+                                  - {item}
+                                </p>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -360,8 +410,18 @@ export default function ResultsPage() {
                         )}
                       </button>
                       {expandedSections.recommendedNextSteps && (
-                        <div className="p-4">
-                          {/* Add recommended next steps content here */}
+                        <div className="p-4 space-y-3">
+                          {analysis.recommendedNextSteps &&
+                            analysis.recommendedNextSteps.map((item, index) => (
+                              <div key={index}>
+                                <h4 className="font-medium text-green-500">
+                                  Recommendation {index + 1}
+                                </h4>
+                                <p className="text-sm text-gray-600 ml-4">
+                                  - {item}
+                                </p>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
