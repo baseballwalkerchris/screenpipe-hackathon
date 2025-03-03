@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import Image from "next/image";
 import {
   pipe,
@@ -25,16 +31,18 @@ interface StreamChunk {
   };
 }
 
-interface MouseTrackerProps {
-  onDataChange?: (data: any, error: string | null) => void;
-  setStreamData?: React.Dispatch<React.SetStateAction<StreamChunk[]>>;
+export interface UserTestHandle {
+  sendDataToGPT: (customPrompt?: string) => Promise<void>;
 }
 
-export function UserTest({
-  onDataChange,
-}: {
-  onDataChange?: (data: any, error: string | null) => void;
-}) {
+export const UserTest = forwardRef<
+  UserTestHandle,
+  {
+    onDataChange?: (data: any, error: string | null) => void;
+    autoStart?: boolean;
+    taskInstructions?: string;
+  }
+>(({ onDataChange, autoStart = false, taskInstructions = "" }, ref) => {
   const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
@@ -51,12 +59,21 @@ export function UserTest({
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
-  const cleanupRef = useRef<(() => void) | null>(null);
+  const cleanupRef = useRef<() => void>(() => {});
 
   // Update ref when history changes
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
+
+  // Control streaming based on autoStart prop
+  useEffect(() => {
+    if (autoStart && !isStreaming) {
+      startStreaming();
+    } else if (!autoStart && isStreaming) {
+      stopStreaming();
+    }
+  }, [autoStart]);
 
   const startStreaming = async () => {
     try {
@@ -64,47 +81,97 @@ export function UserTest({
       setIsStreaming(true);
       setStreamData([]); // Reset stream data when starting new stream
 
-      // Check if realtime transcription is enabled
-      if (!settings?.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
+      // Check if settings are loaded
+      if (!settings) {
         const errorMsg =
-          "Realtime audio transcription is not enabled in settings. Go to account -> settings -> recording -> enable realtime audiotranscription -> models to use: screenpipe cloud. Then refresh.";
+          "Screenpipe settings not loaded yet. Please wait a moment and try again.";
         console.error(errorMsg);
         setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
         setIsStreaming(false);
         return;
       }
 
-      console.log("Settings check passed, audio transcription is enabled");
+      // Check if realtime transcription is enabled
+      if (!settings.screenpipeAppSettings?.enableRealtimeAudioTranscription) {
+        const errorMsg =
+          "Realtime audio transcription is not enabled in settings. Go to account -> settings -> recording -> enable realtime audiotranscription -> models to use: screenpipe cloud. Then refresh.";
+        console.error(errorMsg);
+        setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
+        setIsStreaming(false);
+        return;
+      }
 
-      const originalConsoleError = console.error;
-      console.error = function (msg, ...args) {
-        if (
-          typeof msg === "string" &&
-          (msg.includes("failed to fetch settings") ||
-            msg.includes("ERR_CONNECTION_REFUSED"))
-        ) {
+      // Check microphone permissions
+      try {
+        console.log("Checking microphone permissions...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        stream.getTracks().forEach((track) => track.stop()); // Stop the test stream
+        console.log("Microphone permission granted");
+      } catch (error) {
+        const errorMsg =
+          "Microphone permission denied. Please allow microphone access and try again.";
+        console.error(errorMsg, error);
+        setError(errorMsg);
+        if (onDataChange) {
+          onDataChange({ error: errorMsg }, errorMsg);
+        }
+        setIsStreaming(false);
+        return;
+      }
+
+      // Start audio stream
+      try {
+        // Initialize audio stream with error handling
+        let audioStream;
+        try {
+          audioStream = await pipe.streamTranscriptions();
+        } catch (error) {
+          const errorMsg = `Failed to initialize audio stream: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`;
+          console.error(errorMsg);
+          setError(errorMsg);
+          if (onDataChange) {
+            onDataChange({ error: errorMsg }, errorMsg);
+          }
+          setIsStreaming(false);
           return;
         }
-        originalConsoleError.apply(console, [msg, ...args]);
-      };
 
-      // Start both streams
-      try {
-        console.log("Attempting to start vision stream...");
+        if (!audioStream) {
+          const errorMsg = "Failed to initialize audio stream - stream is null";
+          console.error(errorMsg);
+          setError(errorMsg);
+          if (onDataChange) {
+            onDataChange({ error: errorMsg }, errorMsg);
+          }
+          setIsStreaming(false);
+          return;
+        }
+
+        audioStreamRef.current = audioStream;
+        console.log("Audio stream initialized successfully");
+
+        // Start vision streaming
         const visionStream = pipe.streamVision(withOcr);
         visionStreamRef.current = visionStream;
-
-        console.log("Attempting to start audio stream...");
-        const audioStream = await pipe.streamTranscriptions();
-        audioStreamRef.current = audioStream;
+        console.log("Vision stream initialized successfully");
 
         // Add mouse tracking stream
         const mouseTrackingStream = new EventTarget();
         const handleMouseClick = (e: MouseEvent) => {
           const element = e.target as HTMLElement;
-          const clickEvent = {
+          const clickEvent: StreamChunk = {
             timestamp: new Date().toISOString(),
-            type: "click" as const,
+            type: "click",
             text: `Clicked ${element.tagName.toLowerCase()}${
               element.id ? `#${element.id}` : ""
             }${
@@ -125,6 +192,11 @@ export function UserTest({
         };
 
         window.addEventListener("click", handleMouseClick);
+
+        // Add cleanup for mouse tracking
+        cleanupRef.current = () => {
+          window.removeEventListener("click", handleMouseClick);
+        };
 
         // Handle vision stream
         (async () => {
@@ -167,8 +239,16 @@ export function UserTest({
         (async () => {
           try {
             console.log("Starting audio stream loop");
+            console.log("Audio stream type:", typeof audioStream);
+            console.log(
+              "Audio stream properties:",
+              Object.getOwnPropertyNames(audioStream)
+            );
+
+            let eventCount = 0;
             for await (const event of audioStream) {
-              console.log("Received audio event:", event);
+              eventCount++;
+              console.log(`Received audio event ${eventCount}:`, event);
               if (event.choices?.[0]?.text) {
                 const chunk: TranscriptionChunk = {
                   transcription: event.choices[0].text,
@@ -212,22 +292,14 @@ export function UserTest({
             }
           }
         })();
-
-        // Add cleanup for mouse tracking to stopStreaming
-        cleanupRef.current = () => {
-          window.removeEventListener("click", handleMouseClick);
-        };
       } catch (error) {
-        console.error("Failed to start streams:", error);
+        console.error("Stream initialization failed:", error);
         setError(
           error instanceof Error
-            ? `Failed to start streams: ${error.message}`
-            : "Failed to start streams"
+            ? `Failed to initialize streaming: ${error.message}`
+            : "Failed to initialize streaming"
         );
-        setIsStreaming(false);
       }
-
-      console.error = originalConsoleError;
     } catch (error) {
       console.error("Stream initialization failed:", error);
       setError(
@@ -235,7 +307,6 @@ export function UserTest({
           ? `Failed to initialize streaming: ${error.message}`
           : "Failed to initialize streaming"
       );
-      setIsStreaming(false);
     }
   };
 
@@ -247,6 +318,8 @@ export function UserTest({
     if (audioStreamRef.current) {
       audioStreamRef.current.return?.();
     }
+
+    // Run cleanup function for mouse tracking
     if (cleanupRef.current) {
       cleanupRef.current();
     }
@@ -342,50 +415,36 @@ export function UserTest({
       }
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
+
       console.log("AI Client:", aiClient); // Debug log
 
       if (!aiClient?.chat?.completions) {
         throw new Error("AI client not properly initialized");
       }
 
-      try {
-        const completion = await aiClient.chat.completions
-          .create({
-            model: "gpt-4",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision), transcribed audio, and click events. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
-              },
-              {
-                role: "user",
-                content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that the user did not like or did not understand, and also point out things that the user liked or appreciated:\n\n${formattedData}`,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          })
-          .catch((error) => {
-            console.error("OpenAI API Error:", error);
-            throw new Error(`OpenAI API Error: ${error.message}`);
-          });
+      const completion = await aiClient.chat.completions.create({
+        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI assistant analyzing a stream of vision and audio data from a screen recording session. The data includes OCR text from the screen (vision) and transcribed audio. Please analyze this data and provide a concise summary of the key points and any interesting patterns or insights you notice. Format your response in clear sections.",
+          },
+          {
+            role: "user",
+            content: `Please analyze this stream of vision and audio data: \n${formattedData} as a user testing a designer's product for the given task:
+            ${taskInstructions}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 200,
+      });
 
-        if (!completion?.choices?.[0]?.message?.content) {
-          throw new Error("Invalid response from GPT");
-        }
+      console.log("GPT Response:", completion.choices[0].message.content);
 
-        setGptResponse(completion.choices[0].message.content);
-      } catch (apiError) {
-        console.error("API call failed:", apiError);
-        throw new Error(
-          `Failed to get response from GPT service: ${
-            apiError instanceof Error ? apiError.message : "Unknown error"
-          }`
-        );
-      }
+      setGptResponse(completion.choices[0].message.content);
     } catch (err) {
-      console.error("Error in sendToGPT:", err);
+      console.error("Error calling GPT:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process with GPT"
       );
@@ -393,6 +452,29 @@ export function UserTest({
       setIsProcessingGPT(false);
     }
   };
+
+  const sendDataToGPT = async (customPrompt?: string) => {
+    if (streamData.length === 0) return;
+
+    const formattedData = streamData
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      )
+      .map(
+        (chunk) =>
+          `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+            chunk.type
+          }): ${chunk.text}`
+      )
+      .join("\n");
+
+    await sendToGPT(formattedData);
+  };
+
+  useImperativeHandle(ref, () => ({
+    sendDataToGPT,
+  }));
 
   return (
     <div className="space-y-2">
@@ -503,7 +585,7 @@ export function UserTest({
       {visionEvent && renderVisionContent(visionEvent)}
 
       {/* Display transcription output */}
-      {/* {transcription && (
+      {transcription && (
         <div className="bg-slate-100 rounded p-2 overflow-auto h-[130px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-1">
             Live Transcription:
@@ -516,10 +598,10 @@ export function UserTest({
             </div>
           )}
         </div>
-      )} */}
+      )}
 
       {/* Display collected stream chunks */}
-      {/* {streamData.length > 0 && (
+      {streamData.length > 0 && (
         <div className="bg-slate-100 rounded p-2 overflow-auto max-h-[300px] whitespace-pre-wrap font-mono text-xs mt-2">
           <div className="text-slate-600 font-semibold mb-2">
             Collected Stream Data ({streamData.length} chunks):
@@ -555,7 +637,7 @@ export function UserTest({
               ))}
           </div>
         </div>
-      )} */}
+      )}
 
       {/* Display GPT Response */}
       {gptResponse && (
@@ -577,4 +659,4 @@ export function UserTest({
       </div>
     </div>
   );
-}
+});

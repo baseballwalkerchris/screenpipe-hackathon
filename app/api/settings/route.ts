@@ -21,7 +21,6 @@ const throttle = pThrottle({
 })
 
 export function createAiClient(settings: Settings) {
-    console.log("Hi",settings.aiProviderType)
     return new OpenAI({
         apiKey: settings.aiProviderType === "screenpipe-cloud" 
             ? settings.user.token 
