@@ -17,7 +17,7 @@ export function AppCard({
   projectId
 }: AppCardProps) {
   return (
-    <Link href={`/user/${projectId}?embedUrl=${encodeURIComponent(embedUrl)}`} className="block">
+    <Link href={`/user/${projectId}`} className="block">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         {/* App Preview */}
         <div className="bg-[#FFB84C] aspect-[4/3] relative">

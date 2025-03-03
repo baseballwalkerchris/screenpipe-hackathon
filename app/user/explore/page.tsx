@@ -9,10 +9,10 @@ import { useState } from "react";
 // Sample data - in a real app, this would come from an API
 const SAMPLE_APPS = [
   {
-    id: "app1",
+    id: "Wanderly",
     title: "Wanderly",
     embedUrl:
-      "https://www.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&t=KiX1Pz3bry2fjuz2-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&show-proto-sidebar=1",
+      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
     compensation: "20",
   },

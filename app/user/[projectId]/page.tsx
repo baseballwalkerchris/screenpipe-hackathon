@@ -214,7 +214,7 @@ export default function UserTestPage() {
     <div className="flex h-screen overflow-hidden bg-white">
       <NavigationSidebar />
 
-      <div className="flex-1 flex flex-col h-screen">
+      <div className="flex-1 flex flex-col">
         <TopBar
           projectName={projectId}
           showBackButton
@@ -231,7 +231,7 @@ export default function UserTestPage() {
           />
         )}
 
-        <div className="flex-1 h-[calc(100vh-4rem)]">
+        <div className="flex-1 overflow-auto">
           {showFinalCompletion ? (
             // Final completion screen
             <div className="flex-1 p-8 flex items-center justify-center">
