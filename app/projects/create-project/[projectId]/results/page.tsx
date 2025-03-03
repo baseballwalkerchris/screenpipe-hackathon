@@ -10,6 +10,7 @@ import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AIAssistant } from "@/components/ui/AIAssistant";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 
 interface TestResult {
   projectId: string;
@@ -185,8 +186,13 @@ export default function ResultsPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-[#ff4d4f] text-white w-8 h-8 rounded-full flex items-center justify-center font-medium">
-                    4
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    <Image
+                      src="/sparkles-title.svg"
+                      alt="Sparkles"
+                      width={40}
+                      height={40}
+                    />
                   </div>
                   <CardTitle className="text-xl font-semibold">
                     Results
