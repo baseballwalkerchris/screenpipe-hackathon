@@ -385,33 +385,6 @@ export default function UserTestPage() {
                     <FigmaEmbed embedUrl={embedUrl} width="375" height="652" />
                   </div>
                 </div>
-
-                {/* Screenpipe stream data display */}
-                <div className="absolute bottom-6 right-6 w-96 bg-white/90 backdrop-blur rounded-lg shadow-lg p-4 max-h-96 overflow-auto z-20">
-                  <h3 className="font-semibold mb-2">
-                    Task {currentInstructionIndex + 1}:{" "}
-                    {currentInstruction.title}
-                  </h3>
-                  <div className="space-y-2">
-                    {streamData.map((data, index) => (
-                      <div
-                        key={index}
-                        className="text-sm border-b border-black/10 pb-2"
-                      >
-                        {data.transcription && (
-                          <div className="text-blue-600">
-                            Audio: {data.transcription}
-                          </div>
-                        )}
-                        {data.text && (
-                          <div className="text-green-600">
-                            Vision: {data.text}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           ) : isCompleted ? (
