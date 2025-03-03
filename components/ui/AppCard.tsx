@@ -7,6 +7,7 @@ interface AppCardProps {
   expectedTime: string;
   compensation: string;
   projectId: string;
+  coverPhoto?: string;
 }
 
 export function AppCard({ 
@@ -14,7 +15,8 @@ export function AppCard({
   embedUrl, 
   expectedTime, 
   compensation, 
-  projectId
+  projectId,
+  coverPhoto
 }: AppCardProps) {
   return (
     <Link href={`/user/${projectId}`} className="block">
@@ -22,7 +24,7 @@ export function AppCard({
         {/* App Preview */}
         <div className="bg-[#FFB84C] aspect-[4/3] relative">
           <Image
-            src="/appcard.png"
+            src={coverPhoto || "/appcard.png"}
             alt={title}
             fill
             className="object-cover"

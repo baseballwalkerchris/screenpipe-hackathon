@@ -15,46 +15,33 @@ const SAMPLE_APPS = [
       "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
     compensation: "20",
+    coverPhoto: "/wanderly.png"
   },
   {
     id: "app2",
-    title: "Productivity App",
+    title: "Orangey",
     embedUrl:
       "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
-    compensation: "20",
+    compensation: "20"
   },
   {
     id: "app3",
-    title: "Productivity App",
+    title: "Escape the Room",
     embedUrl:
       "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
     compensation: "20",
+    coverPhoto: "/hci.png"
   },
   {
     id: "app4",
-    title: "Productivity App",
+    title: "Mockingbird",
     embedUrl:
       "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
     expectedTime: "15 mins",
     compensation: "20",
-  },
-  {
-    id: "app5",
-    title: "Productivity App",
-    embedUrl:
-      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
-    expectedTime: "15 mins",
-    compensation: "20",
-  },
-  {
-    id: "app6",
-    title: "Productivity App",
-    embedUrl:
-      "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share",
-    expectedTime: "15 mins",
-    compensation: "20",
+    coverPhoto: "/app.jpg"
   },
 ];
 
@@ -89,6 +76,7 @@ export default function ExplorePage() {
                   embedUrl={app.embedUrl}
                   expectedTime={app.expectedTime}
                   compensation={app.compensation}
+                  coverPhoto={app.coverPhoto}
                 />
               ))}
             </div>
