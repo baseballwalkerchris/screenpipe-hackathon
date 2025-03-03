@@ -14,32 +14,73 @@ export default function UserTestPage() {
   const [taskStarted, setTaskStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [streamData, setStreamData] = useState<any[]>([]);
+  const [currentInstructionIndex, setCurrentInstructionIndex] = useState(0);
   const userTestRef = useRef<UserTestHandle>(null);
   const params = useParams();
   const searchParams = useSearchParams();
   const projectId = params.projectId as string;
 
+  // Get embed URL from URL parameters
+  const embedUrl =
+    searchParams.get("embedUrl") ||
+    "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share";
+
+  // Define multiple instructions
+  const instructionsList = [
+    {
+      title: "Select a travel itinerary",
+      description:
+        "Browse through the available travel itineraries and select one that interests you.",
+    },
+    {
+      title: "Save the itinerary",
+      description:
+        "Find and click the save button to add the itinerary to your profile.",
+    },
+    {
+      title: "Review saved itinerary",
+      description:
+        "Navigate to your profile and verify that the itinerary was saved correctly.",
+    },
+  ];
+
+  const currentInstruction = instructionsList[currentInstructionIndex];
+
   const handleStartTask = () => {
     setTaskStarted(true);
+    setIsCompleted(false);
   };
 
   const handleExitTask = () => {
     setTaskStarted(false);
     setIsCompleted(false);
     setStreamData([]);
+    setCurrentInstructionIndex(0); // Reset to first instruction
   };
 
   const handleTaskComplete = async () => {
-    // Send data to GPT for analysis
-    await userTestRef.current?.sendDataToGPT();
+    // Send current instruction's data to GPT
+    await userTestRef.current?.sendDataToGPT(
+      `Task "${currentInstruction.title}": ${currentInstruction.description}`
+    );
 
+    // Show completion screen
     setTaskStarted(false);
     setIsCompleted(true);
-    setStreamData([]);
+    setStreamData([]); // Clear stream data for next task
   };
 
   const handleContinue = () => {
-    setIsCompleted(false);
+    if (currentInstructionIndex < instructionsList.length - 1) {
+      // Move to next instruction
+      setCurrentInstructionIndex((prev) => prev + 1);
+      setIsCompleted(false);
+      setTaskStarted(true); // Automatically start the next task
+    } else {
+      // If this was the last instruction, reset everything
+      setIsCompleted(false);
+      setCurrentInstructionIndex(0);
+    }
   };
 
   const handleDataChange = (data: any, error: string | null) => {
@@ -48,22 +89,17 @@ export default function UserTestPage() {
     }
   };
 
-  // Get embed URL and instructions from URL parameters
-  const embedUrl =
-    searchParams.get("embedUrl") ||
-    "https://embed.figma.com/proto/rIrwVJdIlOyVTMAuX5ahT3/HCI-A5-Group?node-id=35-32&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=35%3A32&show-proto-sidebar=1&hide-ui=1&embed-host=share";
-  const instructions =
-    searchParams.get("instructions") ||
-    "Select a travel itinerary that interests you and save it to your profile.";
-  const description = searchParams.get("description") || "";
-
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       <NavigationSidebar />
 
       <div className="flex-1 flex flex-col h-screen">
         <TopBar projectName={projectId} showBackButton />
-        <ProgressBar progress={25} />
+        <ProgressBar
+          progress={
+            (currentInstructionIndex + 1) * (100 / instructionsList.length)
+          }
+        />
 
         <div className="flex flex-1 h-[calc(100vh-4rem)]">
           {taskStarted ? (
@@ -73,12 +109,14 @@ export default function UserTestPage() {
                 {/* Instructions in top-left corner */}
                 <div className="absolute left-6 top-6 z-10">
                   <Instructions
-                    title={instructions}
-                    description={description}
+                    title={currentInstruction.title}
+                    description={currentInstruction.description}
                     taskStarted={taskStarted}
                     onStartTask={handleStartTask}
                     onExitTask={handleExitTask}
                     onTaskComplete={handleTaskComplete}
+                    currentStep={currentInstructionIndex + 1}
+                    totalSteps={instructionsList.length}
                   />
                 </div>
 
@@ -92,7 +130,10 @@ export default function UserTestPage() {
                 {/* Screenpipe stream data display */}
                 {taskStarted && (
                   <div className="absolute bottom-6 right-6 w-96 bg-white/90 backdrop-blur rounded-lg shadow-lg p-4 max-h-96 overflow-auto z-20">
-                    <h3 className="font-semibold mb-2">Screenpipe Stream:</h3>
+                    <h3 className="font-semibold mb-2">
+                      Step {currentInstructionIndex + 1}:{" "}
+                      {currentInstruction.title}
+                    </h3>
                     <div className="space-y-2">
                       {streamData.map((data, index) => (
                         <div
@@ -123,23 +164,30 @@ export default function UserTestPage() {
                 {isCompleted ? (
                   <div className="max-w-2xl">
                     <h1 className="text-3xl font-semibold mb-6">
-                      Great job! You completed this task.
+                      Great job! You completed the task:
                     </h1>
+                    <p className="text-xl text-gray-600 mb-8">
+                      {currentInstruction.title}
+                    </p>
                     <Button
                       onClick={handleContinue}
                       className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-8 text-base py-5"
                     >
-                      Continue
+                      {currentInstructionIndex < instructionsList.length - 1
+                        ? "Continue to Next Task"
+                        : "Finish"}
                     </Button>
                   </div>
                 ) : (
                   <Instructions
-                    title={instructions}
-                    description={description}
+                    title={currentInstruction.title}
+                    description={currentInstruction.description}
                     taskStarted={taskStarted}
                     onStartTask={handleStartTask}
                     onExitTask={handleExitTask}
                     onTaskComplete={handleTaskComplete}
+                    currentStep={currentInstructionIndex + 1}
+                    totalSteps={instructionsList.length}
                   />
                 )}
               </div>
@@ -162,7 +210,7 @@ export default function UserTestPage() {
             ref={userTestRef}
             onDataChange={handleDataChange}
             autoStart={taskStarted}
-            taskInstructions={instructions}
+            taskInstructions={`${currentInstruction.title}: ${currentInstruction.description}`}
           />
         </div>
       </div>
