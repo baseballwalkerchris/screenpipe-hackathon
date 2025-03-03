@@ -65,6 +65,14 @@ export async function POST(req: Request) {
       console.log(`Processing ${tasks.length} tasks for project ${projectId}`);
       const vectors = await Promise.all(tasks.map(async (task: any, i: number) => {
         try {
+          // Log the raw task data to debug
+          console.log(`Task ${i + 1} data:`, {
+            hasGptResponse: !!task.gptResponse,
+            gptResponseType: typeof task.gptResponse,
+            gptResponseLength: task.gptResponse?.length,
+            rawGptResponse: task.gptResponse
+          });
+
           // Prepare stream data for embedding
           const streamData = task.streamData ? JSON.stringify(task.streamData) : '';
           const textForEmbedding = prepareTextForEmbedding(streamData);
@@ -79,13 +87,18 @@ export async function POST(req: Request) {
           
           console.log(`Generated embedding for task ${i + 1}/${tasks.length}`);
 
+          // Ensure GPT response is properly stringified
+          const gptResponse = task.gptResponse;
+
+          console.log(`GPT response for task ${i + 1}:`, gptResponse);
+
           return {
             id: `${projectId}-task-${i}-${timestamp}`,
             values: embeddingResponse.data[0].embedding,
             metadata: {
               projectId,
               taskTitle: task.taskTitle || '',
-              gptResponse: task.gptResponse || '',
+              gptResponse,
               timestamp,
               taskIndex: i
             }

@@ -39,12 +39,6 @@ export default function UserTestPage() {
     {
       title: "Select a travel itinerary",
     },
-    {
-      title: "Save the itinerary",
-    },
-    {
-      title: "Review saved itinerary",
-    },
   ];
 
   const currentInstruction = instructionsList[currentInstructionIndex];
