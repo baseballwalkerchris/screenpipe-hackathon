@@ -5,7 +5,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { ProjectStages } from "@/components/ui/ProjectStages";
 import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { Button } from "@/components/ui/button";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -37,6 +37,7 @@ export default function SharePage() {
   const [permissionType, setPermissionType] = useState("link-only");
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
   const projectName = searchParams.get("name") || "Project #1";
 
@@ -60,6 +61,11 @@ export default function SharePage() {
   const handleCopyLink = () => {
     // In a real app, this would copy the actual testing link
     navigator.clipboard.writeText("https://sensus.ai/test/your-project-link");
+  };
+
+  const handleContinue = () => {
+    // Navigate to the next page
+    router.push(`/projects/create-project/${projectId}/results`);
   };
 
   return (
@@ -129,13 +135,23 @@ export default function SharePage() {
             </div>
 
             {/* Copy Link Button */}
-            <div className="inline-block border border-[#FD5A32] rounded-md">
+            <div className="inline-block border border-[#FD5A32] rounded-md mb-12">
               <Button
                 onClick={handleCopyLink}
                 className="w-auto text-[#FF5A5F] hover:text-[#FF4347] bg-transparent hover:bg-[#fff2f0] px-4 py-2 text-sm font-medium rounded-md flex items-center gap-2"
               >
                 <LinkIcon />
                 Copy Testing Link
+              </Button>
+            </div>
+
+            {/* Save & Continue Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleContinue}
+                className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-8 py-2.5 text-sm font-medium rounded-md"
+              >
+                Save & Continue
               </Button>
             </div>
           </div>
