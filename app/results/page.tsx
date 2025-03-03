@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -10,31 +10,20 @@ import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AIAssistant } from "@/components/ui/AIAssistant";
 
-interface Question {
-  text: string;
-  completed: boolean;
+interface TestResult {
+  projectId: string;
+  taskTitle: string;
+  gptResponse: string;
+  streamData: any;
+  timestamp: string;
+  taskIndex: number;
 }
 
 export default function ResultsPage() {
   const [activeTab, setActiveTab] = useState<"summary" | "question">("summary");
-  const [questions] = useState<Question[]>([
-    {
-      text: "Select a travel itinerary that interests you and save it to your profile.",
-      completed: true,
-    },
-    {
-      text: "Search for a 10-day travel itinerary to Japan.",
-      completed: true,
-    },
-    {
-      text: "Search for a 10-day travel itinerary to Japan.",
-      completed: true,
-    },
-    {
-      text: "Search for a 10-day travel itinerary to Japan.",
-      completed: true,
-    },
-  ]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [expandedSections, setExpandedSections] = useState({
     whatWorkedWell: true,
@@ -43,12 +32,87 @@ export default function ResultsPage() {
     recommendedNextSteps: false,
   });
 
+  useEffect(() => {
+    const fetchTestData = async () => {
+      try {
+        const projectId = "1"; // Replace with actual project ID from your app's state/context
+        const response = await fetch(
+          `/api/fetch-test-data?projectId=${projectId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to fetch test data");
+        }
+
+        const data = await response.json();
+        setTestResults(data.results);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTestData();
+  }, []);
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
   };
+
+  const analyzeResults = (results: TestResult[]) => {
+    // Group tasks by title to analyze success rates
+    const taskAnalysis = results.reduce((acc: any, result) => {
+      const { taskTitle, gptResponse } = result;
+      if (!acc[taskTitle]) {
+        acc[taskTitle] = {
+          total: 0,
+          successful: 0,
+          responses: [],
+        };
+      }
+
+      acc[taskTitle].total += 1;
+      // Assuming a positive GPT response indicates success
+      if (gptResponse.toLowerCase().includes("success")) {
+        acc[taskTitle].successful += 1;
+      }
+      acc[taskTitle].responses.push(gptResponse);
+
+      return acc;
+    }, {});
+
+    return taskAnalysis;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  const taskAnalysis = analyzeResults(testResults);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -122,37 +186,28 @@ export default function ResultsPage() {
 
                       {expandedSections.whatWorkedWell && (
                         <div className="p-4 space-y-3">
-                          <div>
-                            <h4 className="font-medium text-red-400">
-                              Smooth Flight Booking (88% Success Rate)
-                            </h4>
-                            <p className="text-sm text-gray-600 ml-4">
-                              - 14 out of 16 users easily found and booked a
-                              flight.
-                            </p>
-                            <p className="text-sm text-gray-600 ml-4">
-                              - Users appreciated the "Compare Flights" feature
-                              for price differences.
-                            </p>
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-red-400">
-                              Clear Pricing & Transparent Fees
-                            </h4>
-                            <p className="text-sm text-gray-600 ml-4">
-                              - 13 out of 16 users mentioned the upfront pricing
-                              clarity as a strong positive.
-                            </p>
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-red-400">
-                              Fast Checkout Process
-                            </h4>
-                            <p className="text-sm text-gray-600 ml-4">
-                              - 12 out of 16 testers found the final booking
-                              experience intuitive and smooth.
-                            </p>
-                          </div>
+                          {Object.entries(taskAnalysis).map(
+                            ([task, analysis]: [string, any]) => {
+                              const successRate =
+                                (analysis.successful / analysis.total) * 100;
+                              if (successRate >= 70) {
+                                return (
+                                  <div key={task}>
+                                    <h4 className="font-medium text-red-400">
+                                      {task} ({successRate.toFixed(0)}% Success
+                                      Rate)
+                                    </h4>
+                                    <p className="text-sm text-gray-600 ml-4">
+                                      - {analysis.successful} out of{" "}
+                                      {analysis.total} users completed this task
+                                      successfully.
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                          )}
                         </div>
                       )}
                     </div>
@@ -176,8 +231,29 @@ export default function ResultsPage() {
                         )}
                       </button>
                       {expandedSections.commonPainPoints && (
-                        <div className="p-4">
-                          {/* Add pain points content here */}
+                        <div className="p-4 space-y-3">
+                          {Object.entries(taskAnalysis).map(
+                            ([task, analysis]: [string, any]) => {
+                              const successRate =
+                                (analysis.successful / analysis.total) * 100;
+                              if (successRate < 70) {
+                                return (
+                                  <div key={task}>
+                                    <h4 className="font-medium text-orange-500">
+                                      {task} ({successRate.toFixed(0)}% Success
+                                      Rate)
+                                    </h4>
+                                    <p className="text-sm text-gray-600 ml-4">
+                                      - Only {analysis.successful} out of{" "}
+                                      {analysis.total} users completed this task
+                                      successfully.
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                          )}
                         </div>
                       )}
                     </div>
@@ -234,17 +310,26 @@ export default function ResultsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {questions.map((question, index) => (
+                    {testResults.map((result, index) => (
                       <div
                         key={index}
                         className="flex items-center space-x-3 bg-zinc-50 p-4 rounded-lg"
                       >
                         <div className="flex-shrink-0">
                           <Badge variant="outline" className="bg-white">
-                            ✓
+                            {result.gptResponse
+                              .toLowerCase()
+                              .includes("success")
+                              ? "✓"
+                              : "✗"}
                           </Badge>
                         </div>
-                        <p>{question.text}</p>
+                        <div>
+                          <p className="font-medium">{result.taskTitle}</p>
+                          <p className="text-sm text-gray-600">
+                            {result.gptResponse}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
