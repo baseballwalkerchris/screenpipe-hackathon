@@ -32,7 +32,8 @@ interface StreamChunk {
 }
 
 export interface UserTestHandle {
-  sendDataToGPT: (customPrompt?: string) => Promise<void>;
+  sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
+  getLastGPTResponse: () => string | null;
 }
 
 export const UserTest = forwardRef<
@@ -406,6 +407,7 @@ export const UserTest = forwardRef<
 
   const sendToGPT = async (formattedData: string) => {
     try {
+      console.log("Starting GPT processing...");
       setIsProcessingGPT(true);
       setGptResponse(null);
       setError(null);
@@ -415,15 +417,15 @@ export const UserTest = forwardRef<
       }
 
       const aiClient = createAiClient(settings.screenpipeAppSettings);
-
-      console.log("AI Client:", aiClient); // Debug log
+      console.log("AI Client initialized");
 
       if (!aiClient?.chat?.completions) {
         throw new Error("AI client not properly initialized");
       }
 
+      console.log("Sending request to GPT...");
       const completion = await aiClient.chat.completions.create({
-        model: "gpt-4", // Using GPT-4 since we're using the screenpipe cloud client
+        model: "gpt-4",
         messages: [
           {
             role: "system",
@@ -440,21 +442,34 @@ export const UserTest = forwardRef<
         max_tokens: 200,
       });
 
-      console.log("GPT Response:", completion.choices[0].message.content);
+      const responseContent = completion.choices[0].message.content;
+      console.log("Received GPT response:", responseContent);
 
-      setGptResponse(completion.choices[0].message.content);
+      setGptResponse(responseContent);
+      console.log("GPT response state updated");
+
+      return responseContent; // Return the response
     } catch (err) {
       console.error("Error calling GPT:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process with GPT"
       );
+      throw err; // Re-throw the error to be caught by the caller
     } finally {
       setIsProcessingGPT(false);
     }
   };
 
   const sendDataToGPT = async (customPrompt?: string) => {
-    if (streamData.length === 0) return;
+    console.log(
+      "sendDataToGPT called with stream data length:",
+      streamData.length
+    );
+
+    if (streamData.length === 0) {
+      console.log("No stream data available");
+      return null;
+    }
 
     const formattedData = streamData
       .sort(
@@ -469,11 +484,19 @@ export const UserTest = forwardRef<
       )
       .join("\n");
 
-    await sendToGPT(formattedData);
+    console.log("Formatted data prepared, sending to GPT...");
+    const response = await sendToGPT(formattedData);
+    console.log("GPT processing completed, response received");
+
+    return response;
   };
 
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
+    getLastGPTResponse: () => {
+      console.log("getLastGPTResponse called, current value:", gptResponse);
+      return gptResponse;
+    },
   }));
 
   return (
