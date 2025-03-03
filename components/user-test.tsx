@@ -40,8 +40,9 @@ export const UserTest = forwardRef<
   {
     onDataChange?: (data: any, error: string | null) => void;
     autoStart?: boolean;
+    taskInstructions?: string;
   }
->(({ onDataChange, autoStart = false }, ref) => {
+>(({ onDataChange, autoStart = false, taskInstructions = "" }, ref) => {
   const { settings, loading } = usePipeSettings();
   const [visionEvent, setVisionEvent] = useState<VisionEvent | null>(null);
   const [transcription, setTranscription] = useState<TranscriptionChunk | null>(
@@ -431,8 +432,8 @@ export const UserTest = forwardRef<
           },
           {
             role: "user",
-            content: `Please analyze this stream of vision and audio data as a user testing a designer's product. Point out things that 
-            the user did not like or did not understand, and also point out things that the user liked or appreciated. :\n\n${formattedData}`,
+            content: `Please analyze this stream of vision and audio data: \n${formattedData} as a user testing a designer's product for the given task:
+            ${taskInstructions}`,
           },
         ],
         temperature: 0.7,

@@ -162,6 +162,7 @@ export default function UserTestPage() {
             ref={userTestRef}
             onDataChange={handleDataChange}
             autoStart={taskStarted}
+            taskInstructions={instructions}
           />
         </div>
       </div>
