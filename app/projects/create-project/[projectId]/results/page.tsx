@@ -18,6 +18,7 @@ interface TestResult {
   streamData: any;
   timestamp: string;
   taskIndex: number;
+  vector?: number[];
 }
 
 export default function ResultsPage() {
@@ -132,9 +133,53 @@ export default function ResultsPage() {
               <h3 className="font-mono text-sm mb-2">
                 Debug: Raw Results Data
               </h3>
-              <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-[300px]">
-                {JSON.stringify(testResults, null, 2)}
-              </pre>
+              <div className="space-y-4">
+                {testResults.map((result, index) => (
+                  <div key={index} className="border-b border-gray-200 pb-4">
+                    <h4 className="font-mono text-xs font-semibold mb-2">
+                      Result {index + 1}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="font-mono text-xs text-gray-500 mb-1">
+                          Metadata
+                        </h5>
+                        <pre className="whitespace-pre-wrap text-xs">
+                          {JSON.stringify(
+                            {
+                              projectId: result.projectId,
+                              taskTitle: result.taskTitle,
+                              gptResponse: result.gptResponse,
+                              timestamp: result.timestamp,
+                              taskIndex: result.taskIndex,
+                            },
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </div>
+                      <div>
+                        <h5 className="font-mono text-xs text-gray-500 mb-1">
+                          Vector ({result.vector?.length || 0} dimensions)
+                        </h5>
+                        <div className="text-xs overflow-auto max-h-[100px]">
+                          <div className="font-mono">
+                            [
+                            {result.vector
+                              ?.slice(0, 5)
+                              .map((v) => v.toFixed(4))
+                              .join(", ")}
+                            {result.vector && result.vector.length > 5
+                              ? ", ..."
+                              : ""}
+                            ]
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <Card>

@@ -30,6 +30,7 @@ export async function GET(req: Request) {
       const queryResponse = await namespaceIndex.query({
         topK: 10000, // Adjust based on your needs
         includeMetadata: true,
+        includeValues: true, // Include the actual vector embeddings
         vector: new Array(1536).fill(0) // Using a zero vector to match all records
       });
 
@@ -40,9 +41,12 @@ export async function GET(req: Request) {
         return NextResponse.json({ results: [] });
       }
 
-      // Extract and sort the results by timestamp and taskIndex
+      // Extract and sort the results by timestamp and taskIndex, now including vectors
       const results = queryResponse.matches
-        .map(match => match.metadata)
+        .map(match => ({
+          ...match.metadata,
+          vector: match.values // Include the vector values in the results
+        }))
         .sort((a: any, b: any) => {
           if (a.timestamp === b.timestamp) {
             return a.taskIndex - b.taskIndex;
