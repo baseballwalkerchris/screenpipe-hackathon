@@ -32,7 +32,7 @@ interface StreamChunk {
 }
 
 export interface UserTestHandle {
-  sendDataToGPT: (customPrompt?: string) => Promise<void>;
+  sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
   getLastGPTResponse: () => string | null;
 }
 
@@ -461,7 +461,15 @@ export const UserTest = forwardRef<
   };
 
   const sendDataToGPT = async (customPrompt?: string) => {
-    if (streamData.length === 0) return;
+    console.log(
+      "sendDataToGPT called with stream data length:",
+      streamData.length
+    );
+
+    if (streamData.length === 0) {
+      console.log("No stream data available");
+      return null;
+    }
 
     const formattedData = streamData
       .sort(
@@ -476,12 +484,19 @@ export const UserTest = forwardRef<
       )
       .join("\n");
 
-    await sendToGPT(formattedData);
+    console.log("Formatted data prepared, sending to GPT...");
+    const response = await sendToGPT(formattedData);
+    console.log("GPT processing completed, response received");
+
+    return response;
   };
 
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
-    getLastGPTResponse: () => gptResponse,
+    getLastGPTResponse: () => {
+      console.log("getLastGPTResponse called, current value:", gptResponse);
+      return gptResponse;
+    },
   }));
 
   return (
