@@ -240,14 +240,14 @@ export function CreateTaskModal({
             {/* Preview section */}
             <div>
               <h2 className="text-lg font-medium mb-2">Preview</h2>
-              <div className="bg-[#1a1a1a] rounded-lg p-4 flex items-center justify-center h-[520px] w-full">
+              <div className="bg-[#000000] rounded-lg p-4 flex items-center justify-center h-[520px] w-full">
                 <div className="relative w-[240px] h-[480px]">
                   {selectedSource === "figma" && validFigmaUrl ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <FigmaEmbed
                         embedUrl={validFigmaUrl}
-                        width="240"
-                        height="480"
+                        width="360"
+                        height="520"
                       />
                     </div>
                   ) : (

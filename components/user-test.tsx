@@ -15,8 +15,14 @@ import { createAiClient } from "@/app/api/settings/route";
 
 interface StreamChunk {
   timestamp: string;
-  type: "vision" | "audio";
+  type: "vision" | "audio" | "click";
   text: string;
+  element?: {
+    tagName: string;
+    id?: string;
+    className?: string;
+    text?: string;
+  };
 }
 
 export function UserTest({
@@ -42,6 +48,7 @@ export function UserTest({
   const historyRef = useRef(history);
   const visionStreamRef = useRef<any>(null);
   const audioStreamRef = useRef<any>(null);
+  const cleanupRef = useRef<() => void>(() => {});
 
   // Update ref when history changes
   useEffect(() => {
@@ -157,6 +164,76 @@ export function UserTest({
         visionStreamRef.current = visionStream;
         console.log("Vision stream initialized successfully");
 
+        // Add mouse tracking stream
+        const mouseTrackingStream = new EventTarget();
+        const handleMouseClick = (e: MouseEvent) => {
+          const element = e.target as HTMLElement;
+          const clickEvent: StreamChunk = {
+            timestamp: new Date().toISOString(),
+            type: "click",
+            text: `Clicked ${element.tagName.toLowerCase()}${
+              element.id ? `#${element.id}` : ""
+            }${
+              element.textContent
+                ? ` containing "${element.textContent.trim()}"`
+                : ""
+            }`,
+            element: {
+              tagName: element.tagName.toLowerCase(),
+              id: element.id || undefined,
+              className: element.className || undefined,
+              text: element.textContent?.trim() || undefined,
+            },
+          };
+
+          setStreamData((prev) => [...prev, clickEvent]);
+          if (onDataChange) onDataChange(clickEvent, null);
+        };
+
+        window.addEventListener("click", handleMouseClick);
+
+        // Add cleanup for mouse tracking
+        cleanupRef.current = () => {
+          window.removeEventListener("click", handleMouseClick);
+        };
+
+        // Handle vision stream
+        (async () => {
+          try {
+            console.log("Starting vision stream loop");
+            for await (const event of visionStream) {
+              if (event.data && isValidVisionEvent(event.data)) {
+                console.log("Received valid vision event:", event.data);
+                setVisionEvent(event.data);
+
+                // Add vision data to stream collection
+                if (event.data.text) {
+                  setStreamData((prev) => [
+                    ...prev,
+                    {
+                      timestamp:
+                        event.data.timestamp || new Date().toISOString(),
+                      type: "vision",
+                      text: event.data.text,
+                    },
+                  ]);
+                }
+
+                if (onDataChange) onDataChange(event.data, null);
+              }
+            }
+          } catch (error) {
+            if (isStreaming) {
+              console.error("Vision stream failed:", error);
+              setError(
+                error instanceof Error
+                  ? `Vision stream error: ${error.message}`
+                  : "Vision stream failed"
+              );
+            }
+          }
+        })();
+
         // Handle audio stream
         (async () => {
           try {
@@ -214,43 +291,6 @@ export function UserTest({
             }
           }
         })();
-
-        // Handle vision stream
-        (async () => {
-          try {
-            console.log("Starting vision stream loop");
-            for await (const event of visionStream) {
-              if (event.data && isValidVisionEvent(event.data)) {
-                console.log("Received valid vision event:", event.data);
-                setVisionEvent(event.data);
-
-                // Add vision data to stream collection
-                if (event.data.text) {
-                  setStreamData((prev) => [
-                    ...prev,
-                    {
-                      timestamp:
-                        event.data.timestamp || new Date().toISOString(),
-                      type: "vision",
-                      text: event.data.text,
-                    },
-                  ]);
-                }
-
-                if (onDataChange) onDataChange(event.data, null);
-              }
-            }
-          } catch (error) {
-            if (isStreaming) {
-              console.error("Vision stream failed:", error);
-              setError(
-                error instanceof Error
-                  ? `Vision stream error: ${error.message}`
-                  : "Vision stream failed"
-              );
-            }
-          }
-        })();
       } catch (error) {
         console.error("Stream initialization failed:", error);
         setError(
@@ -276,6 +316,11 @@ export function UserTest({
     }
     if (audioStreamRef.current) {
       audioStreamRef.current.return?.();
+    }
+
+    // Run cleanup function for mouse tracking
+    if (cleanupRef.current) {
+      cleanupRef.current();
     }
 
     // Process collected stream data
