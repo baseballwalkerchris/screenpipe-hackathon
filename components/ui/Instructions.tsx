@@ -35,7 +35,7 @@ export function Instructions({
             </p>
             {totalSteps > 1 && (
               <p className="text-sm text-gray-500">
-                Step {currentStep} of {totalSteps}
+                Task {currentStep} of {totalSteps}
               </p>
             )}
           </div>
@@ -77,7 +77,7 @@ export function Instructions({
               onClick={onTaskComplete}
               className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white text-sm flex-1"
             >
-              {currentStep === totalSteps ? "I'm Done!" : "Next Step"}
+              I'm Done!
             </Button>
           </div>
         )}

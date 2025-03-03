@@ -29,18 +29,12 @@ export default function UserTestPage() {
   const instructionsList = [
     {
       title: "Select a travel itinerary",
-      description:
-        "Browse through the available travel itineraries and select one that interests you.",
     },
     {
       title: "Save the itinerary",
-      description:
-        "Find and click the save button to add the itinerary to your profile.",
     },
     {
       title: "Review saved itinerary",
-      description:
-        "Navigate to your profile and verify that the itinerary was saved correctly.",
     },
   ];
 
@@ -61,7 +55,7 @@ export default function UserTestPage() {
   const handleTaskComplete = async () => {
     // Send current instruction's data to GPT
     await userTestRef.current?.sendDataToGPT(
-      `Task "${currentInstruction.title}": ${currentInstruction.description}`
+      `Task "${currentInstruction.title}"`
     );
 
     // Show completion screen
@@ -110,7 +104,6 @@ export default function UserTestPage() {
                 <div className="absolute left-6 top-6 z-10">
                   <Instructions
                     title={currentInstruction.title}
-                    description={currentInstruction.description}
                     taskStarted={taskStarted}
                     onStartTask={handleStartTask}
                     onExitTask={handleExitTask}
@@ -131,7 +124,7 @@ export default function UserTestPage() {
                 {taskStarted && (
                   <div className="absolute bottom-6 right-6 w-96 bg-white/90 backdrop-blur rounded-lg shadow-lg p-4 max-h-96 overflow-auto z-20">
                     <h3 className="font-semibold mb-2">
-                      Step {currentInstructionIndex + 1}:{" "}
+                      Task {currentInstructionIndex + 1}:{" "}
                       {currentInstruction.title}
                     </h3>
                     <div className="space-y-2">
@@ -164,11 +157,8 @@ export default function UserTestPage() {
                 {isCompleted ? (
                   <div className="max-w-2xl">
                     <h1 className="text-3xl font-semibold mb-6">
-                      Great job! You completed the task:
+                      Great job! You completed this task.
                     </h1>
-                    <p className="text-xl text-gray-600 mb-8">
-                      {currentInstruction.title}
-                    </p>
                     <Button
                       onClick={handleContinue}
                       className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-8 text-base py-5"
@@ -181,7 +171,6 @@ export default function UserTestPage() {
                 ) : (
                   <Instructions
                     title={currentInstruction.title}
-                    description={currentInstruction.description}
                     taskStarted={taskStarted}
                     onStartTask={handleStartTask}
                     onExitTask={handleExitTask}
@@ -210,7 +199,7 @@ export default function UserTestPage() {
             ref={userTestRef}
             onDataChange={handleDataChange}
             autoStart={taskStarted}
-            taskInstructions={`${currentInstruction.title}: ${currentInstruction.description}`}
+            taskInstructions={currentInstruction.title}
           />
         </div>
       </div>
