@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { usePipeSettings } from "@/lib/hooks/use-pipe-settings";
 import { createAiClient } from "@/app/api/settings/route";
+import openai from "openai";
+import OpenAI from "openai";
 
 interface StreamChunk {
   timestamp: string;
@@ -34,6 +36,13 @@ interface StreamChunk {
 export interface UserTestHandle {
   sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
   getLastGPTResponse: () => string | null;
+  generateFinalSummary: () => Promise<{
+    whatWorkedWell: string;
+    commonPainPoints: string;
+    behavioralAnalysis: string;
+    recommendedNextSteps: string;
+  } | null>;
+  getScreenDataVector: () => Promise<number[]>;
 }
 
 export const UserTest = forwardRef<
@@ -491,12 +500,173 @@ export const UserTest = forwardRef<
     return response;
   };
 
+  const generateFinalSummary = async () => {
+    try {
+      console.log("=== Starting Final Summary Generation ===");
+      console.log("Stream data length:", streamData.length);
+      setIsProcessingGPT(true);
+      setGptResponse(null);
+      setError(null);
+
+      if (!settings?.screenpipeAppSettings) {
+        throw new Error("Screenpipe settings not available");
+      }
+
+      const aiClient = createAiClient(settings.screenpipeAppSettings);
+      console.log("AI Client initialized for final summary");
+
+      if (!aiClient?.chat?.completions) {
+        throw new Error("AI client not properly initialized");
+      }
+
+      const formattedData = streamData
+        .sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map(
+          (chunk) =>
+            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+              chunk.type
+            }): ${chunk.text}`
+        )
+        .join("\n");
+
+      console.log(
+        "Formatted data sample (first 200 chars):",
+        formattedData.substring(0, 200) + "..."
+      );
+      console.log("Task instructions:", taskInstructions);
+      console.log("Sending request to GPT for final summary...");
+
+      const completion = await aiClient.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI assistant analyzing the complete user testing session. Your task is to provide a structured analysis with exactly four sections. Format your response in a specific way, with each section clearly marked with a specific heading:\n\n1. WHAT_WORKED_WELL:\n[Your analysis of what worked well]\n\n2. COMMON_PAIN_POINTS:\n[Your analysis of pain points]\n\n3. BEHAVIORAL_ANALYSIS:\n[Your analysis of user behavior]\n\n4. RECOMMENDED_NEXT_STEPS:\n[Your recommendations]\n\nEnsure each section is clearly separated and marked with these exact headings.",
+          },
+          {
+            role: "user",
+            content: `Please analyze this complete user testing session data and provide a structured summary:\n\nTask Instructions: ${taskInstructions}\n\nSession Data:\n${formattedData}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const responseContent = completion.choices[0].message.content;
+      if (!responseContent) {
+        throw new Error("No response content received from GPT");
+      }
+
+      console.log("=== Final Summary Generated ===");
+      console.log("Raw summary:", responseContent);
+
+      // Parse the response into sections
+      const sections = {
+        whatWorkedWell: "",
+        commonPainPoints: "",
+        behavioralAnalysis: "",
+        recommendedNextSteps: "",
+      };
+
+      // Extract each section using regex
+      const whatWorkedWellMatch = responseContent.match(
+        /WHAT_WORKED_WELL:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const commonPainPointsMatch = responseContent.match(
+        /COMMON_PAIN_POINTS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const behavioralAnalysisMatch = responseContent.match(
+        /BEHAVIORAL_ANALYSIS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+      const recommendedNextStepsMatch = responseContent.match(
+        /RECOMMENDED_NEXT_STEPS:\n([\s\S]*?)(?=\n\d\.|$)/
+      );
+
+      sections.whatWorkedWell = whatWorkedWellMatch
+        ? whatWorkedWellMatch[1].trim()
+        : "";
+      sections.commonPainPoints = commonPainPointsMatch
+        ? commonPainPointsMatch[1].trim()
+        : "";
+      sections.behavioralAnalysis = behavioralAnalysisMatch
+        ? behavioralAnalysisMatch[1].trim()
+        : "";
+      sections.recommendedNextSteps = recommendedNextStepsMatch
+        ? recommendedNextStepsMatch[1].trim()
+        : "";
+
+      console.log("Parsed sections:", sections);
+
+      setGptResponse(responseContent);
+      return sections;
+    } catch (err) {
+      console.error("Error generating final summary:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate final summary"
+      );
+      throw err;
+    } finally {
+      setIsProcessingGPT(false);
+    }
+  };
+
+  const getScreenDataVector = async () => {
+    try {
+      console.log("=== Generating Screen Data Vector ===");
+
+      // Format all screen data into a single text
+      const formattedData = streamData
+        .sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map(
+          (chunk) =>
+            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+              chunk.type
+            }): ${chunk.text}`
+        )
+        .join("\n");
+
+      console.log("Generating embedding for screen data...");
+
+      const response = await fetch("/api/generate-embedding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: formattedData }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate embedding");
+      }
+
+      const data = await response.json();
+      const vector = data.embedding;
+
+      console.log("Vector generated, length:", vector.length);
+      console.log("=== Screen Data Vector Generation Complete ===");
+
+      return vector;
+    } catch (err) {
+      console.error("Error generating screen data vector:", err);
+      throw err;
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
     getLastGPTResponse: () => {
       console.log("getLastGPTResponse called, current value:", gptResponse);
       return gptResponse;
     },
+    generateFinalSummary,
+    getScreenDataVector,
   }));
 
   return (
