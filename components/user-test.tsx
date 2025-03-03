@@ -439,6 +439,8 @@ export const UserTest = forwardRef<
         max_tokens: 200,
       });
 
+      console.log("GPT Response:", completion.choices[0].message.content);
+
       setGptResponse(completion.choices[0].message.content);
     } catch (err) {
       console.error("Error calling GPT:", err);
@@ -466,21 +468,7 @@ export const UserTest = forwardRef<
       )
       .join("\n");
 
-    const prompt =
-      customPrompt ||
-      `
-Task completed! Here's the user test data:
-${formattedData}
-
-Please analyze:
-1. What actions did the user take?
-2. Were there any points of confusion or hesitation?
-3. What feedback or comments did they provide?
-4. How did they interact with the interface?
-5. What improvements could be made based on this interaction?
-`;
-
-    await sendToGPT(prompt);
+    await sendToGPT(formattedData);
   };
 
   useImperativeHandle(ref, () => ({
