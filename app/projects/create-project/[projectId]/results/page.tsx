@@ -9,6 +9,7 @@ import { ProjectStages } from "@/components/ui/ProjectStages";
 import { NavigationSidebar } from "@/components/ui/NavigationSidebar";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AIAssistant } from "@/components/ui/AIAssistant";
+import { useParams } from "next/navigation";
 
 interface TestResult {
   projectId: string;
@@ -20,6 +21,8 @@ interface TestResult {
 }
 
 export default function ResultsPage() {
+  const params = useParams();
+  const projectId = params.projectId as string;
   const [activeTab, setActiveTab] = useState<"summary" | "question">("summary");
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,6 @@ export default function ResultsPage() {
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        const projectId = "help"; // Replace with actual project ID from your app's state/context
         const response = await fetch(
           `/api/fetch-test-data?projectId=${projectId}`,
           {
@@ -52,6 +54,7 @@ export default function ResultsPage() {
         }
 
         const data = await response.json();
+        console.log("Fetched test data:", data);
         setTestResults(data.results);
       } catch (err) {
         console.error("Fetch error:", err);
