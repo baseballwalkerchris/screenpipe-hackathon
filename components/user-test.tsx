@@ -34,6 +34,7 @@ interface StreamChunk {
 export interface UserTestHandle {
   sendDataToGPT: (customPrompt?: string) => Promise<string | null>;
   getLastGPTResponse: () => string | null;
+  generateFinalSummary: () => Promise<string | null>;
 }
 
 export const UserTest = forwardRef<
@@ -491,12 +492,88 @@ export const UserTest = forwardRef<
     return response;
   };
 
+  const generateFinalSummary = async () => {
+    try {
+      console.log("=== Starting Final Summary Generation ===");
+      console.log("Stream data length:", streamData.length);
+      setIsProcessingGPT(true);
+      setGptResponse(null);
+      setError(null);
+
+      if (!settings?.screenpipeAppSettings) {
+        throw new Error("Screenpipe settings not available");
+      }
+
+      const aiClient = createAiClient(settings.screenpipeAppSettings);
+      console.log("AI Client initialized for final summary");
+
+      if (!aiClient?.chat?.completions) {
+        throw new Error("AI client not properly initialized");
+      }
+
+      const formattedData = streamData
+        .sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map(
+          (chunk) =>
+            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
+              chunk.type
+            }): ${chunk.text}`
+        )
+        .join("\n");
+
+      console.log(
+        "Formatted data sample (first 200 chars):",
+        formattedData.substring(0, 200) + "..."
+      );
+      console.log("Task instructions:", taskInstructions);
+      console.log("Sending request to GPT for final summary...");
+
+      const completion = await aiClient.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI assistant analyzing the complete user testing session. Provide a comprehensive analysis of the user's experience organized into four specific sections: 1) What Worked Well, 2) Common Pain Points, 3) Behavioral Analysis, and 4) Recommended Next Steps. Focus on actionable insights and clear patterns in user behavior.",
+          },
+          {
+            role: "user",
+            content: `Please analyze this complete user testing session data and provide a structured summary:\n\nTask Instructions: ${taskInstructions}\n\nSession Data:\n${formattedData}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const responseContent = completion.choices[0].message.content;
+      console.log("=== Final Summary Generated ===");
+      console.log("Summary:", responseContent);
+      console.log("Summary length:", responseContent?.length);
+      console.log("=== End of Final Summary ===");
+
+      setGptResponse(responseContent);
+      return responseContent;
+    } catch (err) {
+      console.error("Error generating final summary:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate final summary"
+      );
+      throw err;
+    } finally {
+      setIsProcessingGPT(false);
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     sendDataToGPT,
     getLastGPTResponse: () => {
       console.log("getLastGPTResponse called, current value:", gptResponse);
       return gptResponse;
     },
+    generateFinalSummary,
   }));
 
   return (

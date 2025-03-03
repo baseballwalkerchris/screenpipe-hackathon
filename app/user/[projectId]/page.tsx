@@ -41,12 +41,6 @@ export default function UserTestPage() {
     {
       title: "Select a travel itinerary",
     },
-    {
-      title: "Save a travel itinerary",
-    },
-    {
-      title: "Finish a travel itinerary",
-    },
   ];
 
   const currentInstruction = instructionsList[currentInstructionIndex];
@@ -129,8 +123,13 @@ export default function UserTestPage() {
       setIsCompleted(false);
       setTaskStarted(false);
     } else {
-      // This is the last task, upload all data
+      // This is the last task, generate final summary and upload all data
       try {
+        // Generate final summary
+        console.log("Generating final summary for all tasks...");
+        const finalSummary = await userTestRef.current?.generateFinalSummary();
+        console.log("Final summary generated:", finalSummary);
+
         console.log("Uploading test data:", {
           projectId,
           taskCount: allTaskData.length,
@@ -146,6 +145,7 @@ export default function UserTestPage() {
             projectId,
             tasks: allTaskData,
             timestamp: new Date().toISOString(),
+            finalSummary: finalSummary,
           }),
         });
 
