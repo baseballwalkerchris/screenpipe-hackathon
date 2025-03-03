@@ -16,6 +16,7 @@ export default function UserTestPage() {
   const [taskStarted, setTaskStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showFinalCompletion, setShowFinalCompletion] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [streamData, setStreamData] = useState<any[]>([]);
   const [currentInstructionIndex, setCurrentInstructionIndex] = useState(0);
   const [allTaskData, setAllTaskData] = useState<
@@ -128,6 +129,9 @@ export default function UserTestPage() {
       setIsCompleted(false);
       setTaskStarted(false);
     } else {
+      // Show loading screen
+      setIsUploading(true);
+
       // For final task, wait for GPT summary and data upload
       try {
         // Generate final summary
@@ -173,13 +177,16 @@ export default function UserTestPage() {
         }
 
         console.log("Successfully uploaded test data");
-        // Only show completion screen after successful upload
+        // Hide loading and show completion
+        setIsUploading(false);
         setShowFinalCompletion(true);
       } catch (error) {
         console.error("Error in final task processing:", {
           error,
           message: error instanceof Error ? error.message : "Unknown error",
         });
+        // Hide loading and show error
+        setIsUploading(false);
         setError(
           error instanceof Error
             ? error.message
@@ -227,7 +234,7 @@ export default function UserTestPage() {
           showBackButton
           onBackClick={handleBackButton}
         />
-        {!showLandingScreen && !showFinalCompletion && (
+        {!showLandingScreen && !showFinalCompletion && !isUploading && (
           <ProgressBar
             progress={
               showFinalCompletion
@@ -239,7 +246,23 @@ export default function UserTestPage() {
         )}
 
         <div className="flex-1 overflow-auto">
-          {showFinalCompletion ? (
+          {isUploading ? (
+            // Loading screen
+            <div className="flex-1 p-8 flex items-center justify-center">
+              <div className="max-w-lg text-center">
+                <div className="mb-8">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#FF5A5F] mx-auto"></div>
+                </div>
+                <h1 className="text-2xl font-semibold mb-3">
+                  Uploading your test results...
+                </h1>
+                <p className="text-gray-600">
+                  Please wait while we process and save your feedback. This may
+                  take a moment.
+                </p>
+              </div>
+            </div>
+          ) : showFinalCompletion ? (
             // Final completion screen
             <div className="flex-1 p-8 flex items-center justify-center">
               <div className="max-w-lg">
