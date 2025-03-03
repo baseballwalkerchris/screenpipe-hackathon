@@ -66,10 +66,11 @@ export default function UserTestPage() {
 
   const handleContinue = () => {
     if (currentInstructionIndex < instructionsList.length - 1) {
-      // Move to next instruction
+      // Move to next instruction but don't start it yet
       setCurrentInstructionIndex((prev) => prev + 1);
       setIsCompleted(false);
-      setTaskStarted(true); // Automatically start the next task
+      // Don't auto-start the task anymore
+      setTaskStarted(false);
     } else {
       // If this was the last instruction, reset everything
       setIsCompleted(false);
@@ -156,36 +157,41 @@ export default function UserTestPage() {
               <div className="flex-1 p-8 flex items-center">
                 {isCompleted ? (
                   <div className="max-w-2xl">
-                    <h1 className="text-3xl font-semibold mb-6">
+                    <h1 className="text-2xl font-semibold mb-4">
                       Great job! You completed this task.
                     </h1>
                     <Button
                       onClick={handleContinue}
-                      className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-8 text-base py-5"
+                      className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-6 py-2 rounded-md"
                     >
-                      {currentInstructionIndex < instructionsList.length - 1
-                        ? "Continue to Next Task"
-                        : "Finish"}
+                      {currentInstructionIndex === instructionsList.length - 1
+                        ? "Finish"
+                        : "Continue"}
                     </Button>
                   </div>
                 ) : (
-                  <Instructions
-                    title={currentInstruction.title}
-                    taskStarted={taskStarted}
-                    onStartTask={handleStartTask}
-                    onExitTask={handleExitTask}
-                    onTaskComplete={handleTaskComplete}
-                    currentStep={currentInstructionIndex + 1}
-                    totalSteps={instructionsList.length}
-                  />
+                  <div className="max-w-2xl">
+                    <p className="uppercase text-sm text-gray-500 font-medium mb-4">
+                      INSTRUCTIONS
+                    </p>
+                    <h1 className="text-2xl font-semibold mb-6">
+                      {currentInstruction.title}
+                    </h1>
+                    <Button
+                      onClick={handleStartTask}
+                      className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white px-6 py-2 rounded-md"
+                    >
+                      Start Task
+                    </Button>
+                  </div>
                 )}
               </div>
 
               {/* Right side - Prototype Display */}
               <div className="px-8 flex items-center">
-                <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden">
+                <div className="w-[450px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={embedUrl} width="375" height="812" />
+                    <FigmaEmbed embedUrl={embedUrl} width="450" height="900" />
                   </div>
                 </div>
               </div>
