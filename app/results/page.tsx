@@ -35,7 +35,7 @@ export default function ResultsPage() {
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        const projectId = "1"; // Replace with actual project ID from your app's state/context
+        const projectId = "help"; // Replace with actual project ID from your app's state/context
         const response = await fetch(
           `/api/fetch-test-data?projectId=${projectId}`,
           {

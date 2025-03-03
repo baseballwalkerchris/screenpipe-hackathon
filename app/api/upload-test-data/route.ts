@@ -14,6 +14,21 @@ function prepareTextForEmbedding(text: string): string {
   return cleaned.slice(0, 8000);
 }
 
+// Helper function to batch array into chunks
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+// Helper function to truncate metadata strings
+function truncateMetadata(text: string | undefined, maxLength: number = 1000): string {
+  if (!text) return '';
+  return text.slice(0, maxLength);
+}
+
 export async function POST(req: Request) {
   try {
     console.log('Uploading test data...');
@@ -49,27 +64,20 @@ export async function POST(req: Request) {
       // Process each task
       console.log(`Processing ${tasks.length} tasks for project ${projectId}`);
       const vectors = await Promise.all(tasks.map(async (task: any, i: number) => {
-        let taskText: string = '';
         try {
-          // Clean and prepare the task data
-          const cleanedGptResponse = task.gptResponse ? task.gptResponse.toString() : '';
-          const cleanedStreamData = task.streamData ? JSON.stringify(task.streamData) : '';
+          // Prepare stream data for embedding
+          const streamData = task.streamData ? JSON.stringify(task.streamData) : '';
+          const textForEmbedding = prepareTextForEmbedding(streamData);
           
-          taskText = prepareTextForEmbedding(`
-            Task: ${task.taskTitle || ''}
-            GPT Analysis: ${cleanedGptResponse}
-            User Actions: ${cleanedStreamData}
-          `);
-
-          console.log(`Task ${i + 1} text length: ${taskText.length} characters`);
+          console.log(`Task ${i + 1} stream data length: ${textForEmbedding.length} characters`);
 
           // Generate embedding using OpenAI directly
           const embeddingResponse = await openai.embeddings.create({
-            model: "text-embedding-ada-002",
-            input: taskText
+            model: "text-embedding-3-small",
+            input: textForEmbedding
           });
           
-          console.log(`Generated embedding for task ${i + 1}/${tasks.length} (dimension: ${embeddingResponse.data[0].embedding.length})`);
+          console.log(`Generated embedding for task ${i + 1}/${tasks.length}`);
 
           return {
             id: `${projectId}-task-${i}-${timestamp}`,
@@ -77,8 +85,7 @@ export async function POST(req: Request) {
             metadata: {
               projectId,
               taskTitle: task.taskTitle || '',
-              gptResponse: cleanedGptResponse,
-              streamData: task.streamData,
+              gptResponse: task.gptResponse || '',
               timestamp,
               taskIndex: i
             }
@@ -88,8 +95,6 @@ export async function POST(req: Request) {
             error: taskError,
             task: {
               title: task.taskTitle,
-              textLength: taskText?.length,
-              hasGptResponse: !!task.gptResponse,
               hasStreamData: !!task.streamData
             }
           });
@@ -97,7 +102,7 @@ export async function POST(req: Request) {
         }
       }));
 
-      // Upsert vectors to Pinecone
+      // Upload vectors to Pinecone
       console.log(`Upserting ${vectors.length} vectors to Pinecone namespace: project-${projectId}`);
       await namespaceIndex.upsert(vectors);
       console.log('Successfully uploaded vectors to Pinecone');
