@@ -2,6 +2,7 @@
 
 import { SearchIcon, GridIcon } from "@/components/icons";
 import Image from "next/image";
+import Link from "next/link";
 
 export function NavigationSidebar() {
   return (
@@ -18,12 +19,16 @@ export function NavigationSidebar() {
           priority
         />
       </div>
-      <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
-        <SearchIcon className="w-5 h-5 text-gray-500" />
-      </button>
-      <button className="w-10 h-10 flex items-center justify-center rounded-lg mt-2 bg-[#fff2f0]">
-        <GridIcon className="w-5 h-5 text-[#ff4d4f]" />
-      </button>
+      <Link href="/user/explore">
+        <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
+          <SearchIcon className="w-5 h-5 text-gray-500" />
+        </button>
+      </Link>
+      <Link href="/projects">
+        <button className="w-10 h-10 flex items-center justify-center rounded-lg mt-2 bg-[#fff2f0]">
+          <GridIcon className="w-5 h-5 text-[#ff4d4f]" />
+        </button>
+      </Link>
     </div>
   );
 }
