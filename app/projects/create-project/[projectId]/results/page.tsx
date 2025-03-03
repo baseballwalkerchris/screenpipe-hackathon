@@ -127,6 +127,16 @@ export default function ResultsPage() {
         {/* Main content */}
         <div className="flex-1 p-6">
           <div className="max-w-2xl mx-auto">
+            {/* Debug section for testing */}
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-mono text-sm mb-2">
+                Debug: Raw Results Data
+              </h3>
+              <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-[300px]">
+                {JSON.stringify(testResults, null, 2)}
+              </pre>
+            </div>
+
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
