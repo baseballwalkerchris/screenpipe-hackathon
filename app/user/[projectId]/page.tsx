@@ -56,25 +56,53 @@ export default function UserTestPage() {
   };
 
   const handleTaskComplete = async () => {
-    // Send current instruction's data to GPT
-    await userTestRef.current?.sendDataToGPT(
-      `Task "${currentInstruction.title}"`
-    );
+    try {
+      // Send current instruction's data to GPT
+      console.log("Before sending to GPT");
 
-    // Store this task's data
-    setAllTaskData((prev) => [
-      ...prev,
-      {
+      // Try to get the ref first
+      if (!userTestRef.current) {
+        console.error("UserTest ref is not available");
+        return;
+      }
+
+      // Send data to GPT and wait for it to complete
+      await userTestRef.current.sendDataToGPT(
+        `Task "${currentInstruction.title}"`
+      );
+
+      // Add a small delay to ensure state updates have propagated
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Get the response
+      const gptResponse = userTestRef.current.getLastGPTResponse();
+      console.log("GPT Response:", {
+        hasRef: true,
+        rawResponse: gptResponse,
+        responseType: typeof gptResponse,
+        streamDataLength: streamData.length,
+      });
+
+      // Store this task's data
+      const taskData = {
         taskTitle: currentInstruction.title,
-        gptResponse: userTestRef.current?.getLastGPTResponse() || null,
+        gptResponse: gptResponse,
         streamData: streamData,
-      },
-    ]);
+      };
+      console.log("Storing task data:", taskData);
 
-    // Show completion screen
-    setTaskStarted(false);
-    setIsCompleted(true);
-    setStreamData([]); // Clear stream data for next task
+      setAllTaskData((prev) => [...prev, taskData]);
+
+      // Show completion screen
+      setTaskStarted(false);
+      setIsCompleted(true);
+      setStreamData([]); // Clear stream data for next task
+    } catch (error) {
+      console.error("Error in handleTaskComplete:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to complete task"
+      );
+    }
   };
 
   const handleContinue = async () => {
