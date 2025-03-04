@@ -41,15 +41,15 @@ export default function UserTestPage() {
   const instructionsList = [
     {
       title: "Choose a travel itinerary and save it to your profile",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&embed-host=share&hide-ui=1&show-proto-sidebar=0"
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-432&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A432&show-proto-sidebar=0&embed-host=share"
     },
     {
       title: "Indicate your mood and update the itinerary accordingly",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&show-proto-sidebar=0&embed-host=share&hide-ui=1"
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&embed-host=share&hide-ui=1&show-proto-sidebar=0"
     },
     {
       title: "Choose a mindfulness exercise and start engaging with it",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&embed-host=share&hide-ui=1&show-proto-sidebar=0"
+      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&show-proto-sidebar=0&embed-host=share&hide-ui=1"
     }
   ];
 
@@ -116,6 +116,11 @@ export default function UserTestPage() {
 
           setAllTaskData((prev) => [...prev, taskData]);
           setStreamData([]); // Clear stream data for next task
+
+          // If this was the final task, show the final completion screen
+          if (currentInstructionIndex === instructionsList.length - 1) {
+            setShowFinalCompletion(true);
+          }
         })
         .catch((error) => {
           console.error("Error in background GPT processing:", error);
@@ -363,7 +368,7 @@ export default function UserTestPage() {
               <div className="w-[600px]">
                 <div className="w-full h-full bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="375" height="812" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="375" height="812" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -388,7 +393,7 @@ export default function UserTestPage() {
                 {/* Centered Figma embed */}
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="transform scale-[0.95]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="375" height="652" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="375" height="652" />
                   </div>
                 </div>
 
@@ -419,7 +424,7 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="450" height="900" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="450" height="900" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -450,7 +455,7 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl} width="450" height="900" />
+                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="450" height="900" />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
