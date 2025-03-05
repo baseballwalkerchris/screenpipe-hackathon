@@ -77,7 +77,7 @@ export function Instructions({
               onClick={onTaskComplete}
               className="bg-[#FF5A5F] hover:bg-[#FF4347] text-white text-sm flex-1"
             >
-              I'm Done!
+              I&apos;m Done!
             </Button>
           </div>
         )}

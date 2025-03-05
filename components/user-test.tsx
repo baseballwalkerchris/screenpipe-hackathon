@@ -6,6 +6,7 @@ import {
   useRef,
   forwardRef,
   useImperativeHandle,
+  useCallback,
 } from "react";
 import Image from "next/image";
 import {
@@ -17,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { usePipeSettings } from "@/lib/hooks/use-pipe-settings";
-import { createAiClient } from "@/app/api/settings/route";
+import { createAiClient, callOpenAI } from "@/lib/utils/openai-utils";
 import openai from "openai";
 import OpenAI from "openai";
 
@@ -71,21 +72,7 @@ export const UserTest = forwardRef<
   const audioStreamRef = useRef<any>(null);
   const cleanupRef = useRef<() => void>(() => {});
 
-  // Update ref when history changes
-  useEffect(() => {
-    historyRef.current = history;
-  }, [history]);
-
-  // Control streaming based on autoStart prop
-  useEffect(() => {
-    if (autoStart && !isStreaming) {
-      startStreaming();
-    } else if (!autoStart && isStreaming) {
-      stopStreaming();
-    }
-  }, [autoStart]);
-
-  const startStreaming = async () => {
+  const startStreaming = useCallback(async () => {
     try {
       setError(null);
       setIsStreaming(true);
@@ -311,52 +298,49 @@ export const UserTest = forwardRef<
         );
       }
     } catch (error) {
-      console.error("Stream initialization failed:", error);
+      console.error("Error in startStreaming:", error);
       setError(
-        error instanceof Error
-          ? `Failed to initialize streaming: ${error.message}`
-          : "Failed to initialize streaming"
+        error instanceof Error ? error.message : "Failed to start streaming"
       );
+      setIsStreaming(false);
     }
-  };
+  }, [settings, onDataChange, isStreaming, withOcr]);
 
-  const stopStreaming = () => {
+  const stopStreaming = useCallback(() => {
     setIsStreaming(false);
     if (visionStreamRef.current) {
-      visionStreamRef.current.return?.();
+      visionStreamRef.current.close();
+      visionStreamRef.current = null;
     }
     if (audioStreamRef.current) {
-      audioStreamRef.current.return?.();
+      audioStreamRef.current.close();
+      audioStreamRef.current = null;
     }
+    cleanupRef.current();
+  }, []);
 
-    // Run cleanup function for mouse tracking
-    if (cleanupRef.current) {
-      cleanupRef.current();
+  // Update ref when history changes
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  // Control streaming based on autoStart prop
+  useEffect(() => {
+    if (autoStart && !isStreaming) {
+      startStreaming();
+    } else if (!autoStart && isStreaming) {
+      stopStreaming();
     }
+  }, [autoStart, isStreaming, startStreaming, stopStreaming]);
 
-    // Process collected stream data
-    if (streamData.length > 0) {
-      const sortedData = [...streamData].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-      const formattedData = sortedData
-        .map(
-          (chunk) =>
-            `[${new Date(chunk.timestamp).toLocaleTimeString()}] (${
-              chunk.type
-            }): ${chunk.text}`
-        )
-        .join("\n");
-      console.log("Formatted data for GPT:", formattedData);
-    }
-  };
-
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopStreaming();
+      if (isStreaming) {
+        stopStreaming();
+      }
     };
-  }, []);
+  }, [isStreaming, stopStreaming]);
 
   const isValidVisionEvent = (event: VisionEvent): boolean => {
     return !!(
@@ -853,3 +837,5 @@ export const UserTest = forwardRef<
     </div>
   );
 });
+
+UserTest.displayName = "UserTest";

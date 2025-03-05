@@ -41,16 +41,19 @@ export default function UserTestPage() {
   const instructionsList = [
     {
       title: "Choose a travel itinerary and save it to your profile",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-432&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A432&show-proto-sidebar=0&embed-host=share"
+      embedUrl:
+        "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-432&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A432&show-proto-sidebar=0&embed-host=share",
     },
     {
       title: "Indicate your mood and update the itinerary accordingly",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&embed-host=share&hide-ui=1&show-proto-sidebar=0"
+      embedUrl:
+        "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-4485&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A4101&embed-host=share&hide-ui=1&show-proto-sidebar=0",
     },
     {
       title: "Choose a mindfulness exercise and start engaging with it",
-      embedUrl: "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&show-proto-sidebar=0&embed-host=share&hide-ui=1"
-    }
+      embedUrl:
+        "https://embed.figma.com/proto/2ZR3DnUGe2OBBmys1d65gb/Rice-Design-a-thon-2025?page-id=0%3A1&node-id=1-3889&viewport=220%2C112%2C0.17&scaling=scale-down&content-scaling=fixed&starting-point-node-id=1%3A3757&show-proto-sidebar=0&embed-host=share&hide-ui=1",
+    },
   ];
 
   const currentInstruction = instructionsList[currentInstructionIndex];
@@ -334,10 +337,10 @@ export default function UserTestPage() {
                 <div className="max-w-2xl">
                   <h1 className="text-4xl font-semibold mb-4">{projectId}</h1>
                   <p className="text-gray-600 mb-8">
-                    In this user test, you'll be exploring a travel planning
-                    interface and completing {instructionsList.length} tasks.
-                    We'll record your interactions to help improve the user
-                    experience.
+                    In this user test, you&apos;ll be exploring a travel
+                    planning interface and completing {instructionsList.length}{" "}
+                    tasks. We&apos;ll record your interactions to help improve
+                    the user experience.
                   </p>
 
                   <div className="grid grid-cols-3 mb-12 border border-gray-200 rounded-lg overflow-hidden">
@@ -368,7 +371,11 @@ export default function UserTestPage() {
               <div className="w-[600px]">
                 <div className="w-full h-full bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="375" height="812" />
+                    <FigmaEmbed
+                      embedUrl={currentInstruction.embedUrl + "&hide-ui=1"}
+                      width="375"
+                      height="812"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -393,7 +400,11 @@ export default function UserTestPage() {
                 {/* Centered Figma embed */}
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="transform scale-[0.95]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="375" height="652" />
+                    <FigmaEmbed
+                      embedUrl={currentInstruction.embedUrl + "&hide-ui=1"}
+                      width="375"
+                      height="652"
+                    />
                   </div>
                 </div>
 
@@ -424,7 +435,11 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="450" height="900" />
+                    <FigmaEmbed
+                      embedUrl={currentInstruction.embedUrl + "&hide-ui=1"}
+                      width="450"
+                      height="900"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>
@@ -455,7 +470,11 @@ export default function UserTestPage() {
               <div className="px-8 flex items-center">
                 <div className="w-[600px] h-[95%] bg-[#000000] rounded-2xl flex items-center justify-center overflow-hidden relative">
                   <div className="transform scale-[0.8]">
-                    <FigmaEmbed embedUrl={currentInstruction.embedUrl + "&hide-ui=1"} width="450" height="900" />
+                    <FigmaEmbed
+                      embedUrl={currentInstruction.embedUrl + "&hide-ui=1"}
+                      width="450"
+                      height="900"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] cursor-not-allowed" />
                 </div>

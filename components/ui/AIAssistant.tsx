@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { createAiClient, callOpenAI } from "@/app/api/settings/route";
+import { createAiClient, callOpenAI } from "@/lib/utils/openai-utils";
 import { Settings } from "@screenpipe/browser";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";

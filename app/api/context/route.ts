@@ -1,6 +1,6 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import { NextResponse } from "next/server";
-import { createAiClient } from "@/app/api/settings/route";
+import { createAiClient } from "@/lib/utils/openai-utils";
 import { Settings } from "@screenpipe/browser";
 
 export async function POST(req: Request) {
